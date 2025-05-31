@@ -22,14 +22,10 @@ import Quadrant from "./screens/Quadrant";
 import Heatmap from "./screens/Heatmap";
 import Report from "./screens/Report";
 import Tables from "./components/dashcomponents/Tables";
-import Verify from "./screens/auth/Verify";
-// import PlaygroundUpload from "./screens/playground/PlaygroundUpload";
-import AlreadyVerifiedRoute from "./routes/AlreadyVerifiedRoute";
-import VerifiedRoute from "./routes/Verified";
 import PublicRoute from "./routes/Public";
 import { initSse } from "./redux/slices/sseSlice";
 import {PersistGate} from "redux-persist/integration/react";
-// import PlaygroundAnalysis from "./screens/playground/PlaygroundAnalysis";
+
 
 
 store.dispatch(initSse());
@@ -71,27 +67,27 @@ function App() {
 
               {/* Dashboard route with PrivateRoute */}
               <Route element={<PrivateRoute />}>
-              <Route element={<VerifiedRoute />}>
+          
                 <Route path="/dashboard" element={<DashboardLayout />}>
                   <Route index element={<Dashboard />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="tables" element={<Tables />} />
                   <Route path="metadata" element={<MetaData />} />
                 </Route>
-                </Route>
+           
               </Route>
 
 
 
               {/* Analysis routes with PrivateRoute */}
               <Route element={<PrivateRoute />}>
-                <Route element={<VerifiedRoute />}>
+                
                   <Route
                     path="/analysis/:patientSlug/:xraySlug"
                     element={<Analysis />}
                   />
                 </Route>
-              </Route>
+  
               <Route
                 path="/analysis/:patientSlug/:xraySlug/heatmap"
                 element={<PrivateRoute />}
@@ -118,11 +114,7 @@ function App() {
 
 
 
-              <Route element={<PrivateRoute />}>
-                <Route element={<AlreadyVerifiedRoute />}>
-                  <Route path="/verify" element={<Verify />} />
-                </Route>
-              </Route>
+             
 
 
 
