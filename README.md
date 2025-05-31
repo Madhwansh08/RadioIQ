@@ -11,6 +11,14 @@ RadioIQ is a project aimed at providing a seamless interface for analyzing radio
 - Modern frontend built with React and Vite
 - Integration with MongoDB Atlas for data storage
 
+## PORT Configuration
+App->Client->PORT->5173
+App->Server->PORT->7000
+App->Mongodb->PORT->27017
+App->Redis->PORT->6379
+Pyfeatures->PORT->8000
+ML->PORT->18080
+
 ## Installation
 
 ### Prerequisites
@@ -74,5 +82,33 @@ RadioIQ is a project aimed at providing a seamless interface for analyzing radio
       docker compose build
      docker compose up
       ```
+
+## PyFeatures
+
+1. Go to the Project Root Directory:
+     ```bash
+    cd pyfeatures
+    ```
+     
+2. In pyfeatures 
+      ```bash
+    docker compose up -d
+    ```
+      
+## ML
+
+1- Firstly we need to get the Models from the drive link
+
+2- Go to the ml Directory:
+  ```bash
+    make build
+make start
+    ```
+
+
+
+       
+   
+
     
     
