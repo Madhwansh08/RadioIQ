@@ -12,12 +12,14 @@ RadioIQ is a project aimed at providing a seamless interface for analyzing radio
 - Integration with MongoDB Atlas for data storage
 
 ## PORT Configuration
+```
 App->Client->PORT->5173
 App->Server->PORT->7000
 App->Mongodb->PORT->27017
 App->Redis->PORT->6379
 Pyfeatures->PORT->8000
 ML->PORT->18080
+```
 
 ## Installation
 
@@ -104,11 +106,3 @@ ML->PORT->18080
     make build
 make start
     ```
-
-
-
-       
-   
-
-    
-    
