@@ -27,6 +27,7 @@ ML->PORT->18080
 
 - Node.js and npm installed
 - MongoDB Atlas account and connection string
+- Redis configuration
 
 ### Steps
 
