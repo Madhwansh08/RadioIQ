@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # ====================
+  # Backend Service
+  # ====================
+  backend:
+    build: ./server
+    container_name: radioIQ-backend
+    ports:
+      - "7000:7000"           # Maps container's port 7000 to host port 7000.
+    env_file:
+      - ./server/.env         # Loads environment variables from ./server/.env.
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: always
+
+  # ====================
+  # Frontend Service (React + Vite)
+  # ====================
+  client:
+    build: ./client
+    container_name: radioIQ-client
+    ports:
+      - "5173:5173"           # Maps container's port 5173 to host port 5173.
+    depends_on:
+      - backend              # Starts after the backend is running.
+    env_file:
+      - ./client/.env        # Loads environment variables from ./client/.env.
+    networks:
+      - app-network
+    restart: always
+
+  # ====================
+  # MongoDB Service
+  # ====================
+  mongo:
+    image: mongo:latest
+    container_name: radioIQ-mongo
+    ports:
+      - "27018:27017"         # Exposes MongoDB on host port 27018 (internal port remains 27017).
+    volumes:
+      - ./mongo_data:/data/db
+    networks:
+      - app-network
+    restart: always
+    healthcheck:
+      # Using CMD-SHELL and mongosh for the health check.
+      # If mongosh is not available, try replacing with "mongo --quiet --eval 'db.adminCommand(\"ping\")'"
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ====================
+  # Redis Cache Service
+  # ====================
+  redis:
+    image: redis:latest
+    container_name: redis-server
+    ports:
+      - "6380:6379"           # Exposes Redis on host port 6379.
+    networks:
+      - app-network
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_data:
+
+networks:
+  app-network:
+    driver: bridge

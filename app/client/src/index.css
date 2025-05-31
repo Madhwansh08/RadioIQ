@@ -1,0 +1,234 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body, html {
+  overflow-x: hidden;
+}
+
+
+.gradient-background {
+    background: linear-gradient(90deg, #030303 0%, #16113a 29%, #040407 66%, #282a52 100%);
+    background-size: 400% 400%;
+    animation: Gradient 15s ease infinite;
+  }
+
+  
+
+
+  .light-gradient-background {
+    background: linear-gradient(90deg, #ffffff 0%, #ada8d1 29%, #babae6 66%, #b0b2e6 100%);
+    background-size: 400% 400%;
+    animation: Gradient 15s ease infinite;
+  }
+  
+  @keyframes Gradient {
+    0% {
+      background-position: 0 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+  
+
+
+
+
+.gradient-sub-background {
+  background: linear-gradient(90deg, #030811 0%, #040407 56%, #0a0b16 100%);
+  background-size: 400% 400%;
+  animation: Gradient 15s ease infinite;
+}
+
+@keyframes Gradient {
+  0% {
+    background-position: 0 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+
+
+
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-animated {
+  background: linear-gradient(90deg, #5149c2, #e6e6e6, #0a1a36, #7b73f0);
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientAnimation 3s ease infinite;
+}
+
+
+
+.hover-effect {
+  transition: 0.35s font-weight, 0.35s color;
+}
+
+.hover-effect:hover {
+  font-weight: 900;
+  color: rgb(238, 242, 255);
+}
+
+/* To the right */
+.hover-effect:hover + .hover-effect {
+  font-weight: 500;
+  color: rgb(199, 210, 254);
+}
+
+.hover-effect:hover + .hover-effect + .hover-effect {
+  font-weight: 300;
+}
+
+/* To the left */
+.hover-effect:hover ~ .hover-effect {
+  font-weight: 500;
+  color: rgb(199, 210, 254);
+}
+
+.hover-effect:hover ~ .hover-effect ~ .hover-effect {
+  font-weight: 300;
+}
+
+
+
+
+@keyframes progress {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-progress {
+  animation: progress 1.5s ease-in-out forwards;
+}
+
+
+/* index.css (or App.css), after "react-toastify/dist/ReactToastify.css" */
+
+.Toastify__toast {
+  /* light mode */
+  background-color: #fff !important;
+  color: #000       !important;
+  border-radius: 1rem !important;
+  padding: 1rem      !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1) !important;
+}
+
+.dark .Toastify__toast {
+  /* dark mode */
+  background-color: #000 !important;
+  color: #fff       !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3) !important;
+}
+
+/* progress bar */
+.Toastify__progress-bar {
+  background: linear-gradient(to right, #5c60c6, #ffffff) !important;
+  height: 4px                                      !important;
+}
+
+.dark .Toastify__progress-bar {
+  background: linear-gradient(to right, #5c60c6, #030805) !important;
+}
+
+/* close button circle */
+.Toastify__close-button {
+  background: linear-gradient(to right, #5c60c6, #ffffff) !important;
+  border-radius: 9999px;
+  padding: 0.25rem;
+}
+
+.dark .Toastify__close-button {
+  background: linear-gradient(to right, #5c60c6, #030805) !important;
+}
+
+/* white “X” icon */
+.Toastify__close-button > svg {
+  stroke: #fff !important;
+}
+
+
+
+/* Smooth progress bar transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-75 {
+  transition-duration: 75ms;
+}
+
+.ease-out {
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+
+
+@layer utilities {
+  @property --border-angle {
+    inherits: false;
+    initial-value: 0deg;
+    syntax: '<angle>';
+  }
+  .animate-border {
+    border-radius: 4rem;
+    /* use transparent border-image for the animated border only */
+    border: 1px solid transparent;
+    border-image: conic-gradient(
+      from var(--border-angle),
+      rgba(0, 0, 0, 0.48) 80%,
+      #030811 86%,
+      #5c60c6 90%,
+      #030811 94%,
+      rgba(0, 0, 0, 0.48)
+    ) 1;
+    /* keep inner background transparent so section's bg classes show through */
+    background: none;
+    animation: border-rotate 4s linear infinite;
+    position: relative;
+    overflow: visible;
+  }
+
+  .animate-border::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  @keyframes border-rotate {
+    to { --border-angle: 360deg; }
+  }
+}
+
+.lottie-spinner path {
+  fill: var(--lottie-color) !important;
+  stroke: var(--lottie-color) !important;
+}

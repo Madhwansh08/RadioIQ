@@ -1,0 +1,208 @@
+{
+
+  
+      "results": [
+        {
+          "patient": {
+            "patientId": "playGround1",
+            "slug": "pg1",
+            "age": 45,
+            "sex": "Male",
+            "location": "Kanpur"
+          },
+          "xray": {
+            "url": "https://infinityui-kanpur.s3.ap-south-1.amazonaws.com/pyfeatures/dicom_to_png/sample1.png",
+            "originalUrl": "https://kanpur-radiovision-v1.s3.ap-south-1.amazonaws.com/xrays/dicom/sample1.dicom",
+            "slug": "sample1slug",
+            "patientId": "p001",
+            "abnormalities": ["ab001"],
+            "view": "PA",
+            "annotations": [],
+            "lungsFound": true,
+            "isNormal": false,
+            "clahe": "https://radioiq.s3.ap-south-1.amazonaws.com/contrast-enhanced/sample1.png",
+            "ctr": {
+              "ratio": 0.32,
+              "imageUrl": "https://radioiq.s3.ap-south-1.amazonaws.com/ct-ratio/sample1.png"
+            },
+            "zoom": {
+              "x": 100,
+              "y": 10,
+              "width": 900,
+              "height": 1000
+            },
+            "boneSuppression": "https://radioiq.s3.ap-south-1.amazonaws.com/bone-suppressed/sample1.png",
+            "heatmap": "https://radioiq.s3.ap-south-1.amazonaws.com/global-heatmap/sample1.png",
+            "editedAbnormalities": [],
+            "report": null,
+            "_id": "r001",
+            "tbScore": 1,
+            "createdAt": "2025-04-01T10:00:00Z",
+            "updatedAt": "2025-04-01T10:00:00Z",
+            "__v": 0
+          }
+        },
+        {
+          "patient": {
+            "patientId": "playGround2",
+            "slug": "pg2",
+            "age": 60,
+            "sex": "Female",
+            "location": "Delhi"
+          },
+          "xray": {
+            "url": "https://infinityui-kanpur.s3.ap-south-1.amazonaws.com/pyfeatures/dicom_to_png/sample2.png",
+            "originalUrl": "https://kanpur-radiovision-v1.s3.ap-south-1.amazonaws.com/xrays/dicom/sample2.dicom",
+            "slug": "sample2slug",
+            "patientId": "p002",
+            "abnormalities": ["ab002"],
+            "view": "AP",
+            "annotations": [],
+            "lungsFound": true,
+            "isNormal": false,
+            "clahe": "https://radioiq.s3.ap-south-1.amazonaws.com/contrast-enhanced/sample2.png",
+            "ctr": {
+              "ratio": 0.25,
+              "imageUrl": "https://radioiq.s3.ap-south-1.amazonaws.com/ct-ratio/sample2.png"
+            },
+            "zoom": {
+              "x": 110,
+              "y": 5,
+              "width": 910,
+              "height": 1010
+            },
+            "boneSuppression": "https://radioiq.s3.ap-south-1.amazonaws.com/bone-suppressed/sample2.png",
+            "heatmap": "https://radioiq.s3.ap-south-1.amazonaws.com/global-heatmap/sample2.png",
+            "editedAbnormalities": [],
+            "report": null,
+            "_id": "r002",
+            "tbScore": 2,
+            "createdAt": "2025-04-02T11:00:00Z",
+            "updatedAt": "2025-04-02T11:00:00Z",
+            "__v": 0
+          }
+        },
+        {
+          "patient": {
+            "patientId": "playGround3",
+            "slug": "pg3",
+            "age": 35,
+            "sex": "Male",
+            "location": "Mumbai"
+          },
+          "xray": {
+            "url": "https://infinityui-kanpur.s3.ap-south-1.amazonaws.com/pyfeatures/dicom_to_png/sample3.png",
+            "originalUrl": "https://kanpur-radiovision-v1.s3.ap-south-1.amazonaws.com/xrays/dicom/sample3.dicom",
+            "slug": "sample3slug",
+            "patientId": "p003",
+            "abnormalities": ["ab003"],
+            "view": "Lateral",
+            "annotations": [],
+            "lungsFound": true,
+            "isNormal": false,
+            "clahe": "https://radioiq.s3.ap-south-1.amazonaws.com/contrast-enhanced/sample3.png",
+            "ctr": {
+              "ratio": 0.22,
+              "imageUrl": "https://radioiq.s3.ap-south-1.amazonaws.com/ct-ratio/sample3.png"
+            },
+            "zoom": {
+              "x": 120,
+              "y": 15,
+              "width": 920,
+              "height": 1020
+            },
+            "boneSuppression": "https://radioiq.s3.ap-south-1.amazonaws.com/bone-suppressed/sample3.png",
+            "heatmap": "https://radioiq.s3.ap-south-1.amazonaws.com/global-heatmap/sample3.png",
+            "editedAbnormalities": [],
+            "report": null,
+            "_id": "r003",
+            "tbScore": 3,
+            "createdAt": "2025-04-03T12:00:00Z",
+            "updatedAt": "2025-04-03T12:00:00Z",
+            "__v": 0
+          }
+        },
+        {
+          "patient": {
+            "patientId": "playGround4",
+            "slug": "pg4",
+            "age": 50,
+            "sex": "Female",
+            "location": "Lucknow"
+          },
+          "xray": {
+            "url": "https://infinityui-kanpur.s3.ap-south-1.amazonaws.com/pyfeatures/dicom_to_png/sample4.png",
+            "originalUrl": "https://kanpur-radiovision-v1.s3.ap-south-1.amazonaws.com/xrays/dicom/sample4.dicom",
+            "slug": "sample4slug",
+            "patientId": "p004",
+            "abnormalities": ["ab004"],
+            "view": "PA",
+            "annotations": [],
+            "lungsFound": true,
+            "isNormal": false,
+            "clahe": "https://radioiq.s3.ap-south-1.amazonaws.com/contrast-enhanced/sample4.png",
+            "ctr": {
+              "ratio": 0.35,
+              "imageUrl": "https://radioiq.s3.ap-south-1.amazonaws.com/ct-ratio/sample4.png"
+            },
+            "zoom": {
+              "x": 130,
+              "y": 20,
+              "width": 930,
+              "height": 1030
+            },
+            "boneSuppression": "https://radioiq.s3.ap-south-1.amazonaws.com/bone-suppressed/sample4.png",
+            "heatmap": "https://radioiq.s3.ap-south-1.amazonaws.com/global-heatmap/sample4.png",
+            "editedAbnormalities": [],
+            "report": null,
+            "_id": "r004",
+            "tbScore": 4,
+            "createdAt": "2025-04-04T13:00:00Z",
+            "updatedAt": "2025-04-04T13:00:00Z",
+            "__v": 0
+          }
+        },
+        {
+          "patient": {
+            "patientId": "playGround5",
+            "slug": "pg5",
+            "age": 42,
+            "sex": "Male",
+            "location": "Varanasi"
+          },
+          "xray": {
+            "url": "https://infinityui-kanpur.s3.ap-south-1.amazonaws.com/pyfeatures/dicom_to_png/sample5.png",
+            "originalUrl": "https://kanpur-radiovision-v1.s3.ap-south-1.amazonaws.com/xrays/dicom/sample5.dicom",
+            "slug": "sample5slug",
+            "patientId": "p005",
+            "abnormalities": ["ab005"],
+            "view": "AP",
+            "annotations": [],
+            "lungsFound": true,
+            "isNormal": false,
+            "clahe": "https://radioiq.s3.ap-south-1.amazonaws.com/contrast-enhanced/sample5.png",
+            "ctr": {
+              "ratio": 0.29,
+              "imageUrl": "https://radioiq.s3.ap-south-1.amazonaws.com/ct-ratio/sample5.png"
+            },
+            "zoom": {
+              "x": 140,
+              "y": 25,
+              "width": 940,
+              "height": 1040
+            },
+            "boneSuppression": "https://radioiq.s3.ap-south-1.amazonaws.com/bone-suppressed/sample5.png",
+            "heatmap": "https://radioiq.s3.ap-south-1.amazonaws.com/global-heatmap/sample5.png",
+            "editedAbnormalities": [],
+            "report": null,
+            "_id": "r005",
+            "tbScore": 5,
+            "createdAt": "2025-04-05T14:00:00Z",
+            "updatedAt": "2025-04-05T14:00:00Z",
+            "__v": 0
+          }
+        }
+      ]
+
+  }
+  

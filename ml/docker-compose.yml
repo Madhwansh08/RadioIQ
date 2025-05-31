@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/code  # Mount entire project directory
+      - ../dicom_input:/data/dicom_input
+      - ../outputs:/data/output
+      - ../outputs:/data/converted_png
+
+    stdin_open: true
+    tty: true
+    shm_size: '256gb'
+    env_file:
+      - .env.local
+    command: uvicorn src.server:app --host 0.0.0.0 --port 8080 --workers=2 --reload
+    ports:
+      - "18080:8080" # Uvicorn
+      - "5678:5678" # Debugpy
+      - "18888:8888" # Jupyter
+    user: "1000:1000" # Use host user's UID and GID

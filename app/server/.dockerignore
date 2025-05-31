@@ -1,0 +1,8 @@
+# Ignore node_modules (reduces build time) 
+node_modules 
+npm-debug.log 
+.DS_Store 
+.env 
+.git 
+.gitignore 
+.vscode 

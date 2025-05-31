@@ -1,0 +1,23 @@
+services:
+  pyfeatures:
+    image: djangomicroservice-pyfeatures:latest
+    command: >
+      bash -c "chown -R django_user:django_user /app/logs && exec /app/entrypoint.sh"
+    container_name: pyfeatures
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs_host:/app/logs:rw
+      - ./local_storage:/app/GeoHeatmapProject/local_storage:rw
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+      - apparmor:docker-default
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: always

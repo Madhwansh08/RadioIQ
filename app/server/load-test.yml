@@ -1,0 +1,54 @@
+config:
+  target: "http://localhost:7000"    # URL where your server is running
+  phases:
+    - duration: 30                   # Run this phase for 10 seconds
+      arrivalRate: 10                 # Inject 5 new virtual users per second
+      name: "Ramp-up phase"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  # Scenario 1: Login flow followed by Get Patients (protected)
+  - name: "User flow: Login then Get Patients"
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "srivastavamadhwansh@gmail.com"
+            password: "Test@1234"
+          capture:
+            - header: "set-cookie"
+              as: "authCookie"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/api/patients/get/AllPatients"
+          headers:
+            Cookie: "{{ authCookie }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 2: Login flow followed by Get All Xrays (protected)
+  - name: "User flow: Login then Get All Xrays"
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "srivastavamadhwansh@gmail.com"
+            password: "Test@1234"
+          capture:
+            - header: "set-cookie"
+              as: "authCookie"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/api/xrays/get/AllXrays"
+          headers:
+            Cookie: "{{ authCookie }}"
+          expect:
+            - statusCode: 200
+
+            
+
+

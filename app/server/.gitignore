@@ -1,0 +1,8 @@
+node_modules
+.env
+uploads
+error.log
+combined.log
+report.json
+*.log
+# VITE_GEO_API='8c6ed0693eb148118c84cb0dcece25d9'
