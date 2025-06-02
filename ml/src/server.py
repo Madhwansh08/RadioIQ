@@ -331,5 +331,6 @@ app.add_middleware(
 
 # Serve local folder via HTTP
 app.mount("/static", StaticFiles(directory="/data/output"), name="static")
+app.mount('/static' , StaticFiles(directory="/data/converted_png"), name="static")
 
 

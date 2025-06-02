@@ -480,6 +480,8 @@ const Analysis = () => {
     setScale((prevScale) => Math.max(prevScale - 0.1, 1));
   };
 
+  
+
   const handleSmartZoom = () => {
     if (!smartZoomActive) {
       const canvas = canvasRef.current;
@@ -489,6 +491,9 @@ const Analysis = () => {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.src = xrayData.url;
+
+
+
       img.onload = () => {
         const imgWidth = img.width;
         const imgHeight = img.height;
@@ -1128,6 +1133,8 @@ const Analysis = () => {
       </motion.div>
     );
   };
+
+console.log(xrayData?.url)
 
   return (
     <div className="flex md:flex-row flex-col min-h-screen dark:bg-gradient-to-b dark:bg-[#030811] bg-[#fdfdfd]">

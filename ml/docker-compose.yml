@@ -7,9 +7,9 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/code  # Mount entire project directory
-      - ../dicom_input:/data/dicom_input
-      - ../outputs:/data/output
-      - ../outputs:/data/converted_png
+      - ../dicom_input:/data/dicom_input:rw
+      - ../outputs:/data/output:rw
+      - ../outputs:/data/converted_png:rw
 
     stdin_open: true
     tty: true
@@ -21,4 +21,4 @@ services:
       - "18080:8080" # Uvicorn
       - "5678:5678" # Debugpy
       - "18888:8888" # Jupyter
-    user: "1000:1000" # Use host user's UID and GID
+    # user: "1000:1000" # Use host user's UID and GID

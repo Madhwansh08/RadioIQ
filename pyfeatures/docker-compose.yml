@@ -11,6 +11,7 @@ services:
     volumes:
       - ./logs_host:/app/logs:rw
       - ./local_storage:/app/GeoHeatmapProject/local_storage:rw
+      - /home/madhwansh/Desktop/CXR-DATASET:/data/dicom:ro
     cap_drop:
       - ALL
     security_opt:
