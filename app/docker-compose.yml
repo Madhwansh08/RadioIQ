@@ -1,83 +1,110 @@
 version: '3.8'
 
 services:
-  # ====================
+  # =====================
   # Backend Service
-  # ====================
+  # =====================
   backend:
     build: ./server
     container_name: radioIQ-backend
     ports:
-      - "7000:7000"           # Maps container's port 7000 to host port 7000.
+      - "7000:7000"
     env_file:
-      - ./server/.env         # Loads environment variables from ./server/.env.
+      - ./server/.env
     depends_on:
       mongo:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - app-network
+      - shared-network
     restart: always
+    volumes:
+      - ../dicom_input:/data/dicom_input:rw
+      - ../outputs:/data/output:rw
+      - ../outputs:/data/converted_png:rw
 
-  # ====================
+  # =====================
   # Frontend Service (React + Vite)
-  # ====================
+  # =====================
   client:
     build: ./client
     container_name: radioIQ-client
     ports:
-      - "5173:5173"           # Maps container's port 5173 to host port 5173.
+      - "5173:5173"
     depends_on:
-      - backend              # Starts after the backend is running.
+      - backend
     env_file:
-      - ./client/.env        # Loads environment variables from ./client/.env.
+      - ./client/.env
     networks:
-      - app-network
+      - shared-network
     restart: always
 
-  # ====================
+
+  # =====================
   # MongoDB Service
-  # ====================
+  # =====================
   mongo:
     image: mongo:latest
     container_name: radioIQ-mongo
     ports:
-      - "27018:27017"         # Exposes MongoDB on host port 27018 (internal port remains 27017).
+      - "27018:27017"
     volumes:
       - ./mongo_data:/data/db
     networks:
-      - app-network
+      - shared-network
     restart: always
     healthcheck:
-      # Using CMD-SHELL and mongosh for the health check.
-      # If mongosh is not available, try replacing with "mongo --quiet --eval 'db.adminCommand(\"ping\")'"
       test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ====================
+  # =====================
   # Redis Cache Service
-  # ====================
+  # =====================
   redis:
     image: redis:latest
     container_name: redis-server
     ports:
-      - "6380:6379"           # Exposes Redis on host port 6379.
-    networks:
-      - app-network
-    restart: always
+      - "6380:6379"
     command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - shared-network
+    restart: always
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-volumes:
-  mongo_data:
+  # =====================
+  # ML‐Model Service (UVicorn / FastAPI)
+  # =====================
+  mlmodel:
+    build:
+      context: ./ml       # <-- path to your ML‐model Dockerfile location
+      dockerfile: Dockerfile
+    container_name: radioIQ-mlmodel
+    volumes:
+      - ./ml:/code
+      - ../dicom_input:/data/dicom_input:rw
+      - ../outputs:/data/output:rw
+      - ../outputs:/data/converted_png:rw
+    stdin_open: true
+    tty: true
+    shm_size: '256gb'
+    env_file:
+      - ./ml/.env.local
+    command: uvicorn src.server:app --host 0.0.0.0 --port 8080 --workers=2 --reload
+    ports:
+      - "18080:8080"
+      - "5678:5678"
+      - "18888:8888"
+    networks:
+      - shared-network
+    restart: always
 
 networks:
-  app-network:
+  shared-network:
     driver: bridge
