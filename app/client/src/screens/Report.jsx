@@ -13,6 +13,9 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import lowTbImage from '../assets/low.png';
+import mediumTbImage from '../assets/medium.png';
+import highTbImage from '../assets/high.png';
 
 const Report = () => {
   const [patientData, setPatientData] = useState(null);
@@ -319,17 +322,6 @@ const Report = () => {
     }
   };
 
-  const loadImage = (url) => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = url;
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-    });
-  };
-  
-
   const handleDetailedDownload = async () => {
     try {
       // Fetch the report details
@@ -338,11 +330,6 @@ const Report = () => {
         `${config.API_URL}/api/reports/${patientSlug}/${xraySlug}/report`
       );
       const report = response.data.report;
-
-      // Define TB possibility images (update these paths as needed)
-      const lowTbImage = "https://radioiq.s3.ap-south-1.amazonaws.com/static/low.png";
-      const mediumTbImage = "https://radioiq.s3.ap-south-1.amazonaws.com/static/medium.png";
-      const highTbImage = "https://radioiq.s3.ap-south-1.amazonaws.com/static/high.png";
 
       // Create a new jsPDF instance using A4 dimensions
       const doc = new jsPDF({
@@ -563,14 +550,14 @@ const Report = () => {
       // Determine which TB image to use
       let tbImage;
       if (tbPossibilityText === "Low") {
-        tbImage = await loadImage(lowTbImage);
+        tbImage = lowTbImage;
       } else if (tbPossibilityText === "Medium") {
-        tbImage = await loadImage(mediumTbImage);
+        tbImage = mediumTbImage;
       } else {
-        tbImage = await loadImage(highTbImage);
+        tbImage = highTbImage;
       }
       // Place the TB possibility image (adjust coordinates and size as needed)
-      doc.addImage(tbImage, "PNG", 120, y - 28, 50, 37.5);
+      doc.addImage(tbImage, "PNG", 120, y - 28, 60, 37.5);
       y += 15;
       checkYPosition(15);
 
@@ -742,11 +729,6 @@ const Report = () => {
       );
       const report = response.data.report;
       
-      // Define TB possibility images (update these paths as needed)
-      const lowTbImage = "https://radioiq.s3.ap-south-1.amazonaws.com/static/low.png";
-      const mediumTbImage = "https://radioiq.s3.ap-south-1.amazonaws.com/static/medium.png";
-      const highTbImage = "https://radioiq.s3.ap-south-1.amazonaws.com/static/high.png";
-
       // Create a new jsPDF instance using A4 dimensions
       const doc = new jsPDF({
         orientation: "portrait",
@@ -966,14 +948,14 @@ const Report = () => {
       // Determine which TB image to use
       let tbImage;
       if (tbPossibilityText === "Low") {
-        tbImage = await loadImage(lowTbImage);
+        tbImage = lowTbImage;
       } else if (tbPossibilityText === "Medium") {
-        tbImage = await loadImage(mediumTbImage);
+        tbImage = mediumTbImage;
       } else {
-        tbImage = await loadImage(highTbImage);
+        tbImage = highTbImage;
       }
       // Place the TB possibility image (adjust coordinates and size as needed)
-      doc.addImage(tbImage, "PNG", 120, y - 28, 50, 37.5);
+      doc.addImage(tbImage, "PNG", 120, y - 28, 60, 37.5);
       y += 15;
       checkYPosition(15);
 
