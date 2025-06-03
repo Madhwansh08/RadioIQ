@@ -319,7 +319,7 @@ const Analysis = () => {
     return () => {
       window.removeEventListener("resize", resizeCanvas);
     };
-  }, [segmentationActive, annotationsActive, scale, panOffset, abnormalities]);
+  }, [segmentationActive, annotationsActive,  abnormalities]);   
   
 
   const drawImageRef = useRef();
@@ -1134,7 +1134,7 @@ const Analysis = () => {
     );
   };
 
-console.log(xrayData?.url)
+
 
   return (
     <div className="flex md:flex-row flex-col min-h-screen dark:bg-gradient-to-b dark:bg-[#030811] bg-[#fdfdfd]">
