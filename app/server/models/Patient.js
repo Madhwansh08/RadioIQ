@@ -49,5 +49,12 @@ patientSchema.pre("validate", function (next) {
   next();
 });
 
+// Delete X-rays when a Patient is deleted
+patientSchema.post("findOneAndDelete", async function (doc) {
+  if (doc && doc.xrays.length > 0) {
+    await mongoose.model("Xray").deleteMany({ _id: { $in: doc.xrays } });
+  }
+});
+
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;

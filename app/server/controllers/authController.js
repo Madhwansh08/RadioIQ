@@ -34,7 +34,7 @@ exports.registerDoctor = async (req, res) => {
     const {
       name, email, phoneNumber, password, dob = null, profilePicture = null,
       specialization = null, location = null, gender = null, hospital = null,
-      role = "Doctor", isVerified = { email: true },
+      role = "Admin", isVerified = fasle ,
       accountStatus = "Not Subscribed", subscriptionStartDate = null,
       subscriptionEndDate = null, patients = []
     } = req.body;

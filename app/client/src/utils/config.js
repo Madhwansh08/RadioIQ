@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_BASE_URL;
+const API_URL = "http://localhost:7000";
 
 export default {
   API_URL

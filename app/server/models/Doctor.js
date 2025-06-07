@@ -63,10 +63,8 @@ const doctorSchema = new mongoose.Schema(
     },
     // Verification status (indicates if the account has been verified)
     isVerified: {
-      email: {
-        type: Boolean,
-        default: false,
-      },
+      type: Boolean,
+      default: false,
     },
     // Account status (e.g., 'Subscribed', 'Not Subscribed')
     accountStatus: {

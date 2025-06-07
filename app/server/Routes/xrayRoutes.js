@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const XrayController = require("../controllers/XrayController");
-const authMiddleware = require("../middleware/authMiddleware");
+const {authMiddleware} = require("../middleware/authMiddleware");
 const endPoint = require("../endPoints.js");
 
 const router = express.Router();
