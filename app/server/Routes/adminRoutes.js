@@ -7,5 +7,6 @@ router.get("/doctors", AdminController.getAllDoctors);
 router.patch("/doctors/:doctorId/verify", AdminController.verifyDoctorById);
 router.patch("/doctors/:doctorId/block", AdminController.blockDoctorById);
 router.delete("/doctors/:doctorId", AdminController.deleteDoctorById);
+router.get("/doctors/check/:doctorId",isAdmin, AdminController.checkMiddleware);
 
 module.exports = router;

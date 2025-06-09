@@ -30,12 +30,28 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-const isAdmin = (req, res, next) => {
-  console.log("Role : ",req.doctor.role);
-  if (req.doctor && req.doctor.role === "Admin") {
-    return next();
+const isAdmin = async (req, res, next) => {
+  try {
+    const { doctorId } = req.params;
+    console.log("Checking doctor with ID:", doctorId);
+
+    if (!doctorId) {
+      return res.status(400).json({ message: "Doctor ID is required" });
+    }
+
+    const doctor = await Doctor.findById(doctorId); // Await is necessary
+
+    console.log("Doctor found:", doctor);
+
+    if (doctor && doctor.role === "Admin") {
+      return next();
+    }
+
+    return res.status(403).json({ message: "Access denied. Admins only." });
+  } catch (error) {
+    console.error("Error in isAdmin middleware:", error);
+    return res.status(500).json({ message: "Server error" });
   }
-  return res.status(403).json({ message: "Access denied. Admins only." });
-}
+};
 
 module.exports = { authMiddleware, isAdmin };
