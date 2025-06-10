@@ -30,20 +30,15 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-const isAdmin = async (req, res, next) => {
+const isAdmin = (req, res, next) => {
   try {
-    const { doctorId } = req.params;
-    console.log("Checking doctor with ID:", doctorId);
+    const doctor = req.doctor;
 
-    if (!doctorId) {
-      return res.status(400).json({ message: "Doctor ID is required" });
+    if (!doctor) {
+      return res.status(401).json({ message: "Unauthorized: No doctor found in request." });
     }
 
-    const doctor = await Doctor.findById(doctorId); // Await is necessary
-
-    console.log("Doctor found:", doctor);
-
-    if (doctor && doctor.role === "Admin") {
+    if (doctor.role === "Admin") {
       return next();
     }
 
@@ -53,5 +48,6 @@ const isAdmin = async (req, res, next) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 module.exports = { authMiddleware, isAdmin };

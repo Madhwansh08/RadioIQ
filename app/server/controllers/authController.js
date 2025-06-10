@@ -34,10 +34,11 @@ exports.registerDoctor = async (req, res) => {
     const {
       name, email, phoneNumber, password, dob = null, profilePicture = null,
       specialization = null, location = null, gender = null, hospital = null,
-      role = "Admin", isVerified = fasle ,
+      role = "Doctor", isVerified = fasle ,
       accountStatus = "Not Subscribed", subscriptionStartDate = null,
       subscriptionEndDate = null, patients = []
     } = req.body;
+    console.log("Registering doctor with data:", req.body);
 
     if (!name || !email || !phoneNumber || !password) {
       return res.status(400).send({ message: "Please fill all required fields" });

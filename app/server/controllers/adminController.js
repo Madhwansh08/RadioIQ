@@ -1,6 +1,63 @@
 const Doctor = require("../models/Doctor");
 const Patient  = require("../models/Patient");
-const xray = require("../models/Xray");
+const bcrypt = require("bcrypt");
+
+async function getNanoid() {
+  const { customAlphabet } = await import("nanoid");
+  // Define an alphabet of digits 1–9 and uppercase letters A–Z
+  const alphabet = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  // Create a nanoid generator that picks 6 characters from that alphabet
+  const nanoid = customAlphabet(alphabet, 6);
+  return nanoid();
+}
+
+exports.addDoctor = async (req, res) => {
+  try {
+    const {
+      name, email, phoneNumber, password, dob = null, profilePicture = null,
+      specialization = null, location = null, gender = null, hospital = null,
+      role = "Doctor", isVerified = fasle ,
+      accountStatus = "Not Subscribed", subscriptionStartDate = null,
+      subscriptionEndDate = null, patients = []
+    } = req.body;
+
+    if (!name || !email || !phoneNumber || !password) {
+      return res.status(400).send({ message: "Please fill all required fields" });
+    }
+
+    if (!/^\d{10}$/.test(phoneNumber)) {
+      return res.status(400).send({ message: "Phone number must be 10 digits" });
+    }
+
+    const existingDoctor = await Doctor.findOne({ $or: [{ email }, { phoneNumber }] });
+    if (existingDoctor) {
+      const field = existingDoctor.email === email ? "email" : "phone number";
+      return res.status(409).send({ message: `Doctor with this ${field} already exists` });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+     const resetCode = await getNanoid();
+
+
+    const doctor = new Doctor({
+      name, email, phoneNumber, password: hashedPassword, dob, profilePicture,
+      specialization, location, hospital, gender, role, isVerified,
+      accountStatus, subscriptionStartDate, subscriptionEndDate, patients,
+      resetCode, 
+    });
+
+    await doctor.save();
+
+    res.status(201).send({
+      message: "Doctor registered successfully",
+      resetCode,
+    });
+  } catch (error) {
+    console.error("Error registering doctor:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+}
 
 exports.getAllDoctors = async (req, res) => {
   try {
