@@ -232,3 +232,30 @@ body, html {
   fill: var(--lottie-color) !important;
   stroke: var(--lottie-color) !important;
 }
+
+/* WebKit browsers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  background: transparent; /* No track/background */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #5c60c6;              /* your theme color */
+  border-radius: 4px;
+  min-height: 24px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #383bc1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;           /* Make track fully transparent */
+  border-radius: 4px;
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #5c60c6 transparent; /* Only thumb is visible, track transparent */
+}

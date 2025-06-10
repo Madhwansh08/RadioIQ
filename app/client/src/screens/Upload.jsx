@@ -27,6 +27,7 @@ import UserTip from "../components/UserTip";
 
 const InstructionSlider = lazy(() => import("../components/InstructionSlider"));
 const Header = lazy(() => import("../components/Header"));
+import UsbFileModal from "../components/UsbFileModal";
 
 // Reusable PatientDataTable component
 const PatientDataTable = ({
@@ -249,6 +250,7 @@ const Upload = () => {
   const [pincode, setPincode] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State for mobile drawer
+  const [usbModalOpen, setUsbModalOpen] = useState(false);
   const itemsPerPage = 5;
   const navigate = useNavigate();
 
@@ -296,85 +298,84 @@ const Upload = () => {
     }
   }, [tableData, uploadTotal, initialCount, dispatch]);
 
-  const handleFileChange = async (event) => {
-    const selectedFiles = Array.from(event.target.files);
+  const handleFileChange = async (selectedUsbFiles) => {
+  // selectedUsbFiles: array of { path, name } from your custom modal
 
-    if (!selectedFiles.length) return;
+  if (!selectedUsbFiles.length) return;
 
-    setFilesUploaded(true);
+  setFilesUploaded(true);
 
-    const validExtensions = [".dicom", ".png", ".dcm", ".dic"];
-    const invalidFiles = selectedFiles.filter(
-      (file) =>
-        !validExtensions.some((ext) =>
-          file.name.toLowerCase().endsWith(ext)
-        )
+  const validExtensions = [".dicom", ".png", ".dcm", ".dic"];
+  const invalidFiles = selectedUsbFiles.filter(
+    (file) =>
+      !validExtensions.some((ext) =>
+        file.name.toLowerCase().endsWith(ext)
+      )
+  );
+
+  if (invalidFiles.length > 0) {
+    toast.error("Please upload .dicom, .dcm, .dic, .png files only.");
+    return;
+  }
+
+  let storedClientId = localStorage.getItem("clientId") || clientId;
+  if (!storedClientId) {
+    toast.error("Client ID not assigned yet. Please wait or refresh.");
+    return;
+  }
+
+  dispatch(setUploadTotal(selectedUsbFiles.length));
+  dispatch(setInitialCount(tableData.length));
+  dispatch(updateProgress(0));
+
+  setUploading(true);
+  setUploadProgress(0);
+
+  // Prepare an array of file paths (backend will read the files)
+  const filePaths = selectedUsbFiles.map(file => file.path);
+
+  try {
+    const response = await axios.post(
+      `${config.API_URL}/api/xrays/dicom/uploadMultiple`,
+      {
+        files: filePaths,
+        clientId: storedClientId,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      }
     );
 
-    if (invalidFiles.length > 0) {
-      toast.error("Please upload .dicom, .dcm, .dic, .png files only.");
-      return;
-    }
+    if (response.status === 207) {
+      const results = response.data.results;
+      const errorFiles = results.filter((result) => result.error);
+      const successFiles = results.filter((result) => !result.error);
 
-    let storedClientId = localStorage.getItem("clientId") || clientId;
-    if (!storedClientId) {
-      toast.error("Client ID not assigned yet. Please wait or refresh.");
-      return;
-    }
-
-   
-
-    dispatch(setUploadTotal(selectedFiles.length));
-    dispatch(setInitialCount(tableData.length));
-    dispatch(updateProgress(0));
-
-    setUploading(true);
-    setUploadProgress(0);
-
-    const formData = new FormData();
-    selectedFiles.forEach((file) => formData.append("files", file));
-
-    try {
-      const response = await axios.post(
-        `${config.API_URL}/api/xrays/dicom/uploadMultiple`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          withCredentials: true,
-          params: { clientId: storedClientId },
-        }
-      );
-
-      if (response.status === 207) {
-        const results = response.data.results;
-        const errorFiles = results.filter((result) => result.error);
-        const successFiles = results.filter((result) => !result.error);
-
-        if (errorFiles.length > 0) {
-          errorFiles.forEach((result) => {
-            notify('error',
-              `File ${result.fileName || "unknown"} failed: ${result.message || result.error}`
-            );
-          });
-        }
-        if (successFiles.length > 0) {
-          notify('success',
-            `${successFiles.length} file(s) processed successfully, but ${errorFiles.length} file(s) failed.`
+      if (errorFiles.length > 0) {
+        errorFiles.forEach((result) => {
+          notify('error',
+            `File ${result.fileName || "unknown"} failed: ${result.message || result.error}`
           );
-        }
-      } else if (response.status === 200) {
-        notify('success', "File Processing Started data would be available in a while");
+        });
       }
-    } catch (error) {
-      console.error("Error uploading files:", error.response?.data || error.message);
-      notify('error', "Failed to upload DICOM files. Please try again.");
-    } finally {
-      setUploading(false);
+      if (successFiles.length > 0) {
+        notify('success',
+          `${successFiles.length} file(s) processed successfully, but ${errorFiles.length} file(s) failed.`
+        );
+      }
+    } else if (response.status === 200) {
+      notify('success', "File Processing Started, data will be available soon.");
     }
-  };
-
+  } catch (error) {
+    console.error("Error uploading files:", error.response?.data || error.message);
+    notify('error', "Failed to upload DICOM files from USB. Please try again.");
+  } finally {
+    setUploading(false);
+  }
+};
   const handleInputChange = (e, actualIndex) => {
     const { name, value } = e.target;
     if (name === "age") {
@@ -472,6 +473,11 @@ const Upload = () => {
       <Suspense fallback={<div className="bg-[#030811]">...</div>}>
         <Header />
       </Suspense>
+      <UsbFileModal
+        open={usbModalOpen}
+        onClose={() => setUsbModalOpen(false)}
+        onFileSelect={handleFileChange}
+      />
       <div className="flex flex-col items-center mt-30 pt-20 min-h-screen dark:bg-[#030811] bg-[#fdfdfd] text-[#fdfdfd] relative">
         <h1 className="text-center text-4xl md:text-8xl font-bold mb-8 mx-auto dark:text-[#fdfdfd] text-[#030811]">
           <span className="dark:text-[#5c60c6] text-[#030811]">X-Ray</span> Analysis
@@ -480,22 +486,13 @@ const Upload = () => {
           Kindly Upload X-ray Images
         </p>
         <div className="flex flex-col items-center">
-          <label
-            htmlFor="dicom-upload"
+          <button
             className="cursor-pointer dark:bg-[#030811] bg-[#fdfdfd] border-2 shadow-lg shadow-[#231b6e] border-[#231b6e] dark:text-[#fdfdfd] text-[#030811] py-7 px-20 rounded-full text-lg font-medium transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
+            onClick={() => setUsbModalOpen(true)}
           >
             Upload
             <TfiUpload className="dark:text-[#fdfdfd] text-[#030811] m-1 pl-1 text-xl" />
-          </label>
-          <input
-            id="dicom-upload"
-            type="file"
-            multiple
-            accept=".dicom,.png,.dcm,.dic"
-            onChange={handleFileChange}
-            className="hidden"
-            data-testid="dicom-upload"
-          />
+          </button>
         </div>
 
         {/* Mobile drawer toggle button */}

@@ -20,7 +20,9 @@ function getWorkerForClient(clientId) {
       `xrayQueue_${clientId}`, // Add backticks for template literal
       async (job) => {
         const { file, doctorId, clientId, index, totalFiles } = job.data;
-        return await processDicomFile(file, doctorId, clientId, index, totalFiles);
+        console.log(job.data);
+        console.log(`🔄 Processing X-ray job for client ${clientId} - File: ${job.data.file} (${index + 1}/${totalFiles})`);
+        return await processDicomFile(job.data.file, job.data.doctorId, job.data.clientId, job.data.index, job.data.totalFiles);
       },
       {
         concurrency: 5,

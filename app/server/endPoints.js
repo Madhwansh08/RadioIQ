@@ -50,6 +50,9 @@ const getNormalAbnormalXrays='/get/NormalAbnormalXrays'
 const updateXrayBySlug='/dicom/update/:slug'
 const uploadMetaDataDicom='/dicom/upload/metadata'
 const getHeatMapLink='/get/heatmap'
+
+//usb Routes
+const usbFilesRoutes = require('./Routes/usbFilesRoutes');
  
 // Server Routes
 const eventStream = '/events';
@@ -108,5 +111,6 @@ module.exports = {
    requestVerificationOTP,
     verifyVerificationOTP,
     uploadMetaDataDicom,
-    getHeatMapLink
+    getHeatMapLink,
+    usbFilesRoutes,
 };

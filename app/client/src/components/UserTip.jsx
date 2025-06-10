@@ -50,7 +50,7 @@ export default function UserTip() {
         <ol className="space-y-6">
           {steps.map((step, index) => (
             <motion.li
-              key={step.name}
+              key={step.name + '-' + index}
               className={`relative flex items-center ${
                 index <= currentStep ? "dark:text-[#fdfdfd] text-[#030811]" : "text-gray-500"
               }`}
