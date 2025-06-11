@@ -16,7 +16,7 @@ exports.addDoctor = async (req, res) => {
     const {
       name, email, phoneNumber, password, dob = null, profilePicture = null,
       specialization = null, location = null, gender = null, hospital = null,
-      role = "Doctor", isVerified = fasle ,
+      role = "Doctor", isVerified = false ,
       accountStatus = "Not Subscribed", subscriptionStartDate = null,
       subscriptionEndDate = null, patients = []
     } = req.body;
@@ -62,8 +62,7 @@ exports.addDoctor = async (req, res) => {
 exports.getAllDoctors = async (req, res) => {
   try {
     const doctors = await Doctor.find(
-      {},
-      "name email phoneNumber resetCode isVerified"
+      {role:"Doctor"}
     );
 
     res.status(200).json({ doctors });
@@ -92,7 +91,6 @@ exports.verifyDoctorById = async (req, res) => {
   }
 };
 
-// Block a doctor manually (set isVerified.email = false)
 exports.blockDoctorById = async (req, res) => {
   try {
     const { doctorId } = req.params;
@@ -102,7 +100,7 @@ exports.blockDoctorById = async (req, res) => {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
-    doctor.isVerified = false;
+    doctor.isBlocked = true;
     await doctor.save();
 
     res.status(200).json({ message: "Doctor has been blocked (unverified)." });
@@ -121,7 +119,7 @@ exports.unBlockDoctorById = async (req, res) => {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
-    doctor.isVerified = true;
+    doctor.isBlocked = false;
     await doctor.save();
 
     res.status(200).json({ message: "Doctor has been unblocked (verified)." });

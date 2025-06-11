@@ -108,10 +108,9 @@ export const loginUser = createAsyncThunk(
       // Server sets JWT as an httpOnly cookie; return user data only.
       return { user: cleanedUser };
     } catch (error) {
-      console.error("Login error:", error);
-      return rejectWithValue(
-        error.response?.data?.message || error.message
-      );
+      const message =
+        error.response?.data?.message || "An unexpected error occurred.";
+      return rejectWithValue(message);
     }
   }
 );

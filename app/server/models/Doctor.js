@@ -66,6 +66,10 @@ const doctorSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
     // Account status (e.g., 'Subscribed', 'Not Subscribed')
     accountStatus: {
       type: String,

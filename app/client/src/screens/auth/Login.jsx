@@ -48,7 +48,18 @@ const Login = () => {
       dispatch(fetchUserProfile());
       navigate("/");
     } else {
-      toast.error(resultAction.payload || "Login failed");
+      const errorMsg = resultAction.payload;
+    console.log("Login error:", errorMsg);
+    if (
+      errorMsg.includes("blocked") ||
+      errorMsg.includes("verified") ||
+      errorMsg.includes("Invalid credentials") ||
+      errorMsg.includes("Doctor not found")
+    ) {
+      toast.error(errorMsg);
+    } else {
+      toast.error("Login failed. Please try again.");
+    }
     }
   };
 
