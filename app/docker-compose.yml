@@ -4,6 +4,9 @@ services:
   # =====================
   # Backend Service
   # =====================
+
+
+
   backend:
     build: ./server
     container_name: radioIQ-backend
@@ -39,6 +42,18 @@ services:
       - backend
     env_file:
       - ./client/.env
+    networks:
+      - shared-network
+    restart: always
+
+
+  admin:
+    build: ./adminClient
+    container_name: radioIQ-adminClient
+    ports:
+      - "5174:5174"
+    depends_on:
+      - backend
     networks:
       - shared-network
     restart: always

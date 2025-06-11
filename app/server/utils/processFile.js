@@ -364,7 +364,12 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
         }))
       );
       xray.abnormalities = insertedAbns.map(a => a._id);
-      xray.modelannotated = null;
+      const annotatedImageUrl = await generateAnnotatedImage(
+        modelResponse.converted_png,
+        modelResponse.abnormalities
+      );
+ 
+      xray.modelannotated = annotatedImageUrl;
     } else {
       xray.abnormalities = [];
     }
