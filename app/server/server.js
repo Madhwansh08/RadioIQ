@@ -27,6 +27,7 @@ const swaggerDocs = require("./config/swagger");
 const endPoint = require("./endPoints");
 
 // Import Routes
+const adminRoutes = require("./Routes/adminRoutes");
 const authRoutes = require("./Routes/authRoutes");
 const xrayRoutes = require("./Routes/xrayRoutes");
 const patientRoutes = require("./Routes/patientRoutes");
@@ -164,6 +165,7 @@ app.use(endPoint.usePatientRoutes, patientRoutes);
 app.use(endPoint.useAuthRoutes, authRoutes);
 app.use(endPoint.useContactRoutes, contactRoutes);
 app.use(endPoint.useReportRoutes, reportRoutes);
+app.use("/admin", adminRoutes);
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 app.use("/playground", playgroundRoutes);
 

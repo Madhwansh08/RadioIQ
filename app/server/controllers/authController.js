@@ -34,10 +34,11 @@ exports.registerDoctor = async (req, res) => {
     const {
       name, email, phoneNumber, password, dob = null, profilePicture = null,
       specialization = null, location = null, gender = null, hospital = null,
-      role = "Doctor", isVerified = { email: true },
+      role = "Doctor", isVerified = false ,
       accountStatus = "Not Subscribed", subscriptionStartDate = null,
       subscriptionEndDate = null, patients = []
     } = req.body;
+    console.log("Registering doctor with data:", req.body);
 
     if (!name || !email || !phoneNumber || !password) {
       return res.status(400).send({ message: "Please fill all required fields" });
@@ -85,6 +86,18 @@ exports.loginDoctor = async (req, res) => {
     const doctor = await Doctor.findOne({ email });
     if (!doctor) {
       return res.status(404).send({ message: "Doctor not found" });
+    }
+
+    if (doctor.isBlocked) {
+      return res.status(403).send({
+        message: "You have been blocked by admin. Please contact admin.",
+      });
+    }
+
+    if (!doctor.isVerified) {
+      return res.status(403).send({
+        message: "You need to be verified by the admin before logging in.",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, doctor.password);
