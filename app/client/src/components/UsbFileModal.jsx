@@ -133,15 +133,15 @@ export default function UsbFileModal({ open, onClose, onFileSelect }) {
   const [expandedPaths, setExpandedPaths] = useState(new Set());
 
   useEffect(() => {
-    if (!open) return;
-    setLoading(true);
-    setError(null);
-    setDevices([]);
-    setSelectedFilePaths(new Set());
-    setExpandedPaths(new Set());
+  if (!open) return;
+  setLoading(true);
+  setError(null);
+
+  function fetchDevices() {
     fetch("http://localhost:7000/api/usb-files")
       .then(res => res.json())
       .then(data => {
+        console.log("USB API Response:", data);
         setDevices(data.devices || []);
         setLoading(false);
       })
@@ -149,7 +149,13 @@ export default function UsbFileModal({ open, onClose, onFileSelect }) {
         setError("Failed to load devices: " + err.message);
         setLoading(false);
       });
-  }, [open]);
+  }
+
+  fetchDevices();
+  const interval = setInterval(fetchDevices, 2000); // Poll every 2 seconds
+
+  return () => clearInterval(interval);
+}, [open]);
 
   // Helper to flatten selected files for upload
   const allFiles = [];

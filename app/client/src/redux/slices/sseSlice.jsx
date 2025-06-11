@@ -77,18 +77,18 @@ export const initSse = () => (dispatch) => {
       }
     }
     // 3) error cases (incl. SageMaker 424)
-    // else if (data.status === "error" || data.errorCode === 424) {
-    //   const msg = `Error processing file "${data.fileName}": Server busy.`;
-    //   dispatch(
-    //     addNotification({
-    //       id: Date.now(),
-    //       type: "error",
-    //       message: msg,  
-    //       timestamp: new Date().toISOString(),
-    //     })
-    //   );
-    //   toast.error(msg);
-    // }
+    else if (data.status === "error" || data.errorCode === 424) {
+      const msg = `Error processing file "${data.fileName}": Server busy.`;
+      dispatch(
+        addNotification({
+          id: Date.now(),
+          type: "error",
+          message: msg,  
+          timestamp: new Date().toISOString(),
+        })
+      );
+      toast.error(msg);
+    }
   };
 
   eventSource.onerror = (err) => {

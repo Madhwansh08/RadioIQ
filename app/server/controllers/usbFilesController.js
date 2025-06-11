@@ -1,20 +1,10 @@
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 
 /**
  * Detects external USB storage devices for a user, including inside Docker.
  */
 function getUsbMountPaths() {
-  let username;
-  try {
-    username = os.userInfo().username;
-  } catch (e) {
-    username = "sajal";
-  }
-  if (process.env.USB_MEDIA_USER) {
-    username = process.env.USB_MEDIA_USER;
-  }
   const roots = [
     `/media/`,
     `/run/media/`
@@ -78,9 +68,19 @@ function listFolderTree(dir) {
 }
 
 /**
- * Express controller: returns a folder tree for all USB devices.
+ * Helper: Promise-based delay
  */
-exports.getUsbFiles = (req, res) => {
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Express controller: returns a folder tree for all USB devices, with delay for OS to finish mount.
+ */
+exports.getUsbFiles = async (req, res) => {
+  // Wait 500ms before scanning to allow OS/USB to settle
+  await delay(200);
+
   const devices = getUsbMountPaths();
   let output = [];
   devices.forEach(devicePath => {
