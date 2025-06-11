@@ -28,6 +28,7 @@ export const initSse = () => (dispatch) => {
   });
 
   eventSource.onmessage = (evt) => {
+    console.log("cbewfjbewjfbejwf 2",evt);
     const data = JSON.parse(evt.data);
 
     // 1) capture clientId
@@ -75,15 +76,14 @@ export const initSse = () => (dispatch) => {
         toast.error(msg);
       }
     }
-
     // 3) error cases (incl. SageMaker 424)
-    if (data.status === "error" || data.errorCode === 424) {
+    else if (data.status === "error" || data.errorCode === 424) {
       const msg = `Error processing file "${data.fileName}": Server busy.`;
       dispatch(
         addNotification({
           id: Date.now(),
           type: "error",
-          message: msg,
+          message: msg,  
           timestamp: new Date().toISOString(),
         })
       );

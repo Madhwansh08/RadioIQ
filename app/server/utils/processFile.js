@@ -234,24 +234,27 @@ async function savePatientAndAssociateWithDoctor(patientData, doctorId) {
 
 async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
   try {
+
     sendEvent(clientId, {
       status:   "processing",
-      fileName: file.originalname,
+      fileName: path.basename(file),
       progress: ((index + 1) / totalFiles) * 100
     });
 
-    const fileNameLower = file.originalname.toLowerCase();
+    console.log(`Processing file ${index + 1}/${totalFiles}:`, file);
+
+    const fileNameLower = file.toLowerCase();
     let patientId, age, sex, location, dicomFileResponse;
     let isInverted = null;
 
     // Get buffer from multer (if file.buffer exists) or disk
-    const fileBuffer = file.buffer || (await fs.promises.readFile(file.path));
+    const fileBuffer = file.buffer || (await fs.promises.readFile(file));
     const uniqueId   = await getNanoid();
     const baseName   = slugify(
-      file.originalname.replace(/\.[^.]+$/, ""),
+      file.replace(/\.[^.]+$/, ""),
       { lower: true, strict: true }
     );
-    let fileExtension = path.extname(file.originalname);
+    let fileExtension = path.extname(file);
     const localFileName = `${baseName}-${uniqueId}${fileExtension}`;
 
     // Write to /data/dicom_input inside container
@@ -283,7 +286,7 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
       await fs.promises.writeFile(localFilePath, fileBuffer);
       dicomFileResponse = { url: toContainerPath(localFilePath) };
     } else {
-      throw new Error("Unsupported file type: " + file.originalname);
+      throw new Error("Unsupported file type: " + file);
     }
 
     // Invoke the ML model
@@ -295,7 +298,7 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
     if (!modelResponse.lungs_found) {
       sendEvent(clientId, {
         status:   "completed",
-        fileName: file.originalname,
+        fileName: path.basename(file),
         message:  "The image provided is not a valid lung X-ray"
       });
       return { error: "The image provided is not a valid lung X-ray" };
@@ -372,14 +375,14 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
 
     sendEvent(clientId, {
       status:   "completed",
-      fileName: file.originalname,
+      fileName: path.basename(file),
       patient,
       xray
     });
 
     // Clean up multer temp file if it exists
-    if (file.path) {
-      await fs.promises.unlink(file.path);
+    if (file) {
+      await fs.promises.unlink(file);
     }
 
     return {
@@ -393,13 +396,13 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
       xray
     };
   } catch (error) {
-    console.error(`Error processing file ${file.originalname}:`, error.message);
+    console.error(`Error processing file ${file}:`, error.message);
     sendEvent(clientId, {
       status:   "error",
-      fileName: file.originalname,
+      fileName: path.basename(file),
       message:  error.message
     });
-    return { error: `Error processing file ${file.originalname}` };
+    return { error: `Error processing file ${file}` };
   }
 }
 

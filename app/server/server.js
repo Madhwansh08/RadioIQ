@@ -166,6 +166,7 @@ app.use(endPoint.useAuthRoutes, authRoutes);
 app.use(endPoint.useContactRoutes, contactRoutes);
 app.use(endPoint.useReportRoutes, reportRoutes);
 app.use("/admin", adminRoutes);
+app.use('/api', endPoint.usbFilesRoutes);
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 app.use("/playground", playgroundRoutes);
 

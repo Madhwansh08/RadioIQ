@@ -126,11 +126,14 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
     // Send initial processing progress event
     sendEvent(clientId, {
       status: "processing",
-      fileName: file.originalname,
+      fileName: path.basename(file),
       progress: ((index + 1) / totalFiles) * 100,
     });
 
-    const fileNameLower = file.originalname.toLowerCase();
+    console.log("Attempting to process files");
+    console.log(file);
+
+    const fileNameLower = file.toLowerCase();
     let patientId, age, sex, location, pngBuffer, cloudResponse, dicomUploadResponse;
     let isInverted = null;
 
@@ -141,7 +144,7 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
       sex = "Unknown";
       location = "Unknown";
 
-      pngBuffer = await sharp(file.path)
+      pngBuffer = await sharp(file)
         .resize(1024, 1024, { fit: "fill" })
         .png()
         .toBuffer();
@@ -192,7 +195,7 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
     if (!modelResponse.lungs_found) {
       sendEvent(clientId, {
         status: "completed",
-        fileName: file.originalname,
+        fileName: path.basename(file),
         message: "The image provided is not a valid lung X-ray",
       });
       return { error: "The image provided is not a valid lung X-ray" };
@@ -266,13 +269,13 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
 
     sendEvent(clientId, {
       status: "completed",
-      fileName: file.originalname,
+      fileName: path.basename(file),
       patient,
       xray,
     });
 
     // Use unlinkAsync (promisified) to remove the file
-    await unlinkAsync(file.path);
+    await unlinkAsync(file);
 
     return {
       patient: {
@@ -285,14 +288,14 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
       xray,
     };
   } catch (error) {
-    console.error(`Error processing file ${file.originalname}:`, error.message);
+    console.error(`Error processing file ${file}:`, error.message);
     sendEvent(clientId, {
       status: "error",
-      fileName: file.originalname,
+      fileName: path.basename(file),
       message: error.message,
       errorCode: error.$metadata?.httpStatusCode || null,
     });
-    return { error: `Error processing file ${file.originalname}` };
+    return { error: `Error processing file ${file}` };
   }
 }
 
@@ -301,23 +304,47 @@ exports.processDicomFile = processDicomFile;
 
 // The remainder of your code remains unchanged (uploadMultipleDicomXray, etc.)
 exports.uploadMultipleDicomXray = async (req, res) => {
-  const clientId = req.query.clientId;
+  const clientId = req.query.clientId || req.body.clientId;
   if (!clientId) {
     return res.status(400).json({ error: "clientId is required" });
   }
-  try {
-    const files = req.files;
-    if (!files || files.length === 0) {
-      return res.status(400).json({ error: "No files uploaded" });
+  
+  let files = req.body.files; // Multer-populated for form uploads
+  console.log("Starting files");
+  console.log(files);
+  // If no files uploaded via form, check for USB modal payload
+  if ((!files || files.length === 0) && req.body.files && Array.isArray(req.body.files) && req.body.files.length > 0) {
+    // Read files from USB paths
+    const allowedRoots = ['/media/'];
+    files = [];
+    for (const filePath of req.body.files) {
+      if (!allowedRoots.some(root => filePath.startsWith(root))) {
+        return res.status(403).json({ error: `Invalid file location: ${filePath}` });
+      }
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: `File not found: ${filePath}` });
+      }
+      const buffer = fs.readFileSync(filePath);
+      files.push({
+        buffer,
+        originalname: path.basename(filePath),
+        mimetype: mime.lookup(filePath) || 'application/octet-stream',
+        size: buffer.length
+      });
     }
+  }
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: "No files uploaded" });
+  }
+
+  try {
     const doctorId = req.doctor._id;
-
     const clientQueue = getQueueForClient(clientId);
-
-
     getWorkerForClient(clientId);
-
-    // Enqueue each file as a unique job in the client-specific queue.
+    console.log("Files to be processed:");
+    console.log(files);
+    // Enqueue each file
     const jobPromises = files.map((file, index) =>
       clientQueue.add("xrayJob", {
         file,
@@ -326,10 +353,11 @@ exports.uploadMultipleDicomXray = async (req, res) => {
         index,
         totalFiles: files.length,
       })
+      
     );
     await Promise.all(jobPromises);
 
-    // Clear caches as needed.
+    // Clear caches as needed
     await cache.del(`patients:${doctorId}`);
     await cache.del(`totalxrays:${doctorId}`);
     await cache.del(`xrayStats:${doctorId}`);

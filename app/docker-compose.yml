@@ -23,6 +23,9 @@ services:
       - ../dicom_input:/data/dicom_input:rw
       - ../outputs:/data/output:rw
       - ../outputs:/data/converted_png:rw
+      - /media:/media:rw,rshared
+    environment:
+      - USB_MEDIA_USER=sajal  
 
   # =====================
   # Frontend Service (React + Vite)
