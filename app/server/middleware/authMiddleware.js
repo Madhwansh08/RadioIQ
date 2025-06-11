@@ -30,4 +30,24 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = authMiddleware;
+const isAdmin = (req, res, next) => {
+  try {
+    const doctor = req.doctor;
+
+    if (!doctor) {
+      return res.status(401).json({ message: "Unauthorized: No doctor found in request." });
+    }
+
+    if (doctor.role === "Admin") {
+      return next();
+    }
+
+    return res.status(403).json({ message: "Access denied. Admins only." });
+  } catch (error) {
+    console.error("Error in isAdmin middleware:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+module.exports = { authMiddleware, isAdmin };
