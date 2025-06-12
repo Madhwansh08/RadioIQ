@@ -1,6 +1,10 @@
 const Doctor = require("../models/Doctor");
+const Admin = require("../models/Admin");
 const Patient  = require("../models/Patient");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const speakeasy = require("speakeasy");
+const qrcode = require("qrcode");
 
 async function getNanoid() {
   const { customAlphabet } = await import("nanoid");
@@ -10,6 +14,186 @@ async function getNanoid() {
   const nanoid = customAlphabet(alphabet, 6);
   return nanoid();
 }
+
+exports.initiateAdminRegistration = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).send({ message: "Please fill all required fields" });
+    }
+
+    const adminExists = await Admin.findOne({});
+    if (adminExists) {
+      return res.status(403).send({ message: "Admin already exists. Cannot register another. Please Log-In" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const resetCode = await getNanoid();
+
+    const secret = speakeasy.generateSecret({
+      name: `RadioIQ (${email})`
+    });
+
+    const qrCodeURL = await qrcode.toDataURL(secret.otpauth_url);
+
+    // Respond without saving
+    res.status(200).send({
+      message: "Scan the QR to setup MFA and complete registration",
+      tempData: {
+        name,
+        email,
+        hashedPassword,
+        role: "Admin",
+        resetCode,
+        mfaSecret: secret.base32
+      },
+      qrCodeURL
+    });
+  } catch (error) {
+    console.error("Error in registration init:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+exports.completeAdminRegistration = async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      hashedPassword,
+      role,
+      resetCode,
+      mfaSecret,
+      token
+    } = req.body;
+
+    const verified = speakeasy.totp.verify({
+      secret: mfaSecret,
+      encoding: "base32",
+      token,
+      window: 1
+    });
+
+    if (!verified) {
+      return res.status(401).send({ message: "Invalid MFA token" });
+    }
+
+    const admin = new Admin({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      resetCode,
+      isPrimary: true,
+      mfaSecret,
+      mfaEnabled: true
+    });
+
+    await admin.save();
+
+    res.status(201).send({
+      message: "Admin registered successfully"
+    });
+
+  } catch (error) {
+    console.error("Error completing admin registration:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+exports.loginAdmin = async (req,res) => {
+  try{
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).send({ message: "Please fill all required fields" });
+    }
+
+    const admin = await Admin.findOne({ email });
+    if (!admin) {
+      return res.status(404).send({ message: "Admin not found" });
+    }
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) {
+      return res.status(401).send({ message: "Invalid Password" });
+    }
+
+    if (admin.mfaEnabled) {
+      return res.status(206).send({
+        message: "MFA required",
+        mfaRequired: true,
+        adminId: admin._id,
+      });
+    }
+
+    const token = jwt.sign({ id: admin._id, role: admin.role }, process.env.JWT_SECRET, {
+      expiresIn: "365d",
+    });
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+    });
+
+    res.status(200).send({
+      message: "Login successful",
+      success: true,
+      admin: {
+        name: admin.name,
+        email: admin.email,
+        phoneNumber: admin.phoneNumber,
+      },
+    });
+  }catch(error){
+    res.status(400).send({ message: error.message });
+  }
+}
+
+exports.verifyMfa = async (req, res) => {
+  try {
+    const { adminId, token: userToken } = req.body;
+
+    const admin = await Admin.findById(adminId);
+    if (!admin || !admin.mfaEnabled) {
+      return res.status(403).send({ message: "MFA not configured" });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: admin.mfaSecret,
+      encoding: 'base32',
+      token: userToken,
+      window: 1, // allow ±30s drift
+    });
+
+    if (!verified) {
+      return res.status(401).send({ message: "Invalid or expired MFA token" });
+    }
+
+    const jwtToken = jwt.sign({ id: admin._id, role: admin.role }, process.env.JWT_SECRET, {
+      expiresIn: "365d",
+    });
+
+    res.cookie("token", jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).send({
+      message: "Login successful",
+      success: true,
+    });
+  } catch (error) {
+    console.error("MFA verification error:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
 
 exports.addDoctor = async (req, res) => {
   try {
@@ -164,22 +348,4 @@ exports.deleteDoctorById = async (req, res) => {
   }
 };
 
-exports.checkMiddleware = async (req, res) => {
-  try {
-    const { doctorId } = req.params;
-    console.log("Checking doctor with ID:", doctorId);
-    if (!doctorId) {
-      return res.status(400).json({ message: "Doctor ID is required" });
-    }
-    const doctor = await Doctor.findById(doctorId);
-    if (!doctor) {
-      return res.status(404).json({ message: "Doctor not found" });
-    }
-
-    res.status(200).json({ message: "Doctor exists", doctor });
-  } catch (error) {
-    console.error("Error checking doctor:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
 

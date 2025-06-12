@@ -9,7 +9,7 @@ const authMiddleware = async (req, res, next) => {
     : null;
   
   // If not found, try to get it from cookies
-  if (!token && req.cookies && req.cookies.token) {
+  if (!token && req.cookies?.token) {
     token = req.cookies.token;
   }
   
@@ -27,6 +27,7 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });
+    console.error("Authentication error:", error);
   }
 };
 

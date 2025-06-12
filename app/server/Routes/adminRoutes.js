@@ -1,14 +1,64 @@
 const express = require("express");
 const router = express.Router();
+const Admin = require("../models/Admin");
 const AdminController = require("../controllers/adminController");
-const {authMiddleware, isAdmin} = require("../middleware/authMiddleware");
+const {
+  adminAuthMiddleware,
+  isAdmin,
+} = require("../middleware/adminAuthMiddleware");
 
-router.get("/doctors", authMiddleware, isAdmin, AdminController.getAllDoctors);
-router.post("/doctors/add", authMiddleware, isAdmin, AdminController.addDoctor);
-router.patch("/doctors/:doctorId/verify",authMiddleware, isAdmin, AdminController.verifyDoctorById);
-router.patch("/doctors/:doctorId/block", authMiddleware, isAdmin,AdminController.blockDoctorById);
-router.patch("/doctors/:doctorId/unblock", authMiddleware, isAdmin,AdminController.unBlockDoctorById);
-router.delete("/doctors/:doctorId", authMiddleware, isAdmin,AdminController.deleteDoctorById);
-router.get("/doctors/check/:doctorId",isAdmin, AdminController.checkMiddleware);
+// Admin Registration (2-step MFA secure)
+router.post("/adminInitRegister", AdminController.initiateAdminRegistration);
+router.post(
+  "/adminCompleteRegister",
+  AdminController.completeAdminRegistration
+);
+
+// Admin Login Flow
+router.post("/adminLogin", AdminController.loginAdmin);
+router.post("/adminVerifyMfa", AdminController.verifyMfa);
+
+// Doctor Management (Admin Protected)
+router.get(
+  "/doctors",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.getAllDoctors
+);
+router.post(
+  "/doctors/add",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.addDoctor
+);
+router.patch(
+  "/doctors/:doctorId/verify",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.verifyDoctorById
+);
+router.patch(
+  "/doctors/:doctorId/block",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.blockDoctorById
+);
+router.patch(
+  "/doctors/:doctorId/unblock",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.unBlockDoctorById
+);
+router.delete(
+  "/doctors/:doctorId",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.deleteDoctorById
+);
+
+router.get("/adminExists", async (req, res) => {
+  const admin = await Admin.findOne({});
+  res.send({ exists: !!admin });
+});
 
 module.exports = router;
