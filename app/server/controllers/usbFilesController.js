@@ -1,5 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+
+const upload = multer();
 
 /**
  * Detects external USB storage devices for a user, including inside Docker.
@@ -78,7 +81,7 @@ function delay(ms) {
  * Express controller: returns a folder tree for all USB devices, with delay for OS to finish mount.
  */
 exports.getUsbFiles = async (req, res) => {
-  // Wait 500ms before scanning to allow OS/USB to settle
+  // Wait 200ms before scanning to allow OS/USB to settle
   await delay(200);
 
   const devices = getUsbMountPaths();
@@ -95,3 +98,32 @@ exports.getUsbFiles = async (req, res) => {
   });
   res.json({ devices: output });
 };
+
+/**
+ * Express controller: saves an uploaded file to selected USB folder.
+ * Only allows saving to /media/ subfolders for security reasons.
+ */
+exports.saveToUsb = [
+  upload.single('file'),
+  (req, res) => {
+    const { targetPath } = req.body;
+    const fileBuffer = req.file && req.file.buffer;
+    const fileName = req.file && req.file.originalname;
+
+    if (!targetPath || !fileName || !fileBuffer) {
+      return res.status(400).json({ error: "Missing targetPath or file" });
+    }
+    // Security: Only allow saving to /media
+    if (!targetPath.startsWith('/media/')) {
+      return res.status(403).json({ error: "Invalid USB path" });
+    }
+    const fullPath = path.join(targetPath, fileName);
+
+    fs.writeFile(fullPath, fileBuffer, err => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to save file" });
+      }
+      res.json({ success: true, savedPath: fullPath });
+    });
+  }
+];
