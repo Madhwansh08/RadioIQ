@@ -53,7 +53,9 @@ async function invokeSageMakerEndpoint(imageUrl, isInverted) {
     });
 
     const response = await sagemakerClient.send(command);
-    const responseBody = JSON.parse(Buffer.from(response.Body).toString("utf-8"));
+    const responseBody = JSON.parse(
+      Buffer.from(response.Body).toString("utf-8")
+    );
     return responseBody;
   } catch (error) {
     console.error("SageMaker Invocation Failed:", error);
@@ -134,7 +136,13 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
     console.log(file);
 
     const fileNameLower = file.toLowerCase();
-    let patientId, age, sex, location, pngBuffer, cloudResponse, dicomUploadResponse;
+    let patientId,
+      age,
+      sex,
+      location,
+      pngBuffer,
+      cloudResponse,
+      dicomUploadResponse;
     let isInverted = null;
 
     if (fileNameLower.endsWith(".png")) {
@@ -189,7 +197,10 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
     }
 
     // Call AI service before saving any patient or xray record.
-    const modelResponse = await invokeSageMakerEndpoint(cloudResponse.url, isInverted);
+    const modelResponse = await invokeSageMakerEndpoint(
+      cloudResponse.url,
+      isInverted
+    );
 
     // Check if lungs are detected
     if (!modelResponse.lungs_found) {
@@ -300,7 +311,7 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
 }
 
 // Export the processDicomFile function correctly.
-exports.processDicomFile = processDicomFile; 
+exports.processDicomFile = processDicomFile;
 
 // The remainder of your code remains unchanged (uploadMultipleDicomXray, etc.)
 exports.uploadMultipleDicomXray = async (req, res) => {
@@ -308,18 +319,25 @@ exports.uploadMultipleDicomXray = async (req, res) => {
   if (!clientId) {
     return res.status(400).json({ error: "clientId is required" });
   }
-  
+
   let files = req.body.files; // Multer-populated for form uploads
   console.log("Starting files");
   console.log(files);
   // If no files uploaded via form, check for USB modal payload
-  if ((!files || files.length === 0) && req.body.files && Array.isArray(req.body.files) && req.body.files.length > 0) {
+  if (
+    (!files || files.length === 0) &&
+    req.body.files &&
+    Array.isArray(req.body.files) &&
+    req.body.files.length > 0
+  ) {
     // Read files from USB paths
-    const allowedRoots = ['/media/'];
+    const allowedRoots = ["/media/"];
     files = [];
     for (const filePath of req.body.files) {
-      if (!allowedRoots.some(root => filePath.startsWith(root))) {
-        return res.status(403).json({ error: `Invalid file location: ${filePath}` });
+      if (!allowedRoots.some((root) => filePath.startsWith(root))) {
+        return res
+          .status(403)
+          .json({ error: `Invalid file location: ${filePath}` });
       }
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({ error: `File not found: ${filePath}` });
@@ -328,8 +346,8 @@ exports.uploadMultipleDicomXray = async (req, res) => {
       files.push({
         buffer,
         originalname: path.basename(filePath),
-        mimetype: mime.lookup(filePath) || 'application/octet-stream',
-        size: buffer.length
+        mimetype: mime.lookup(filePath) || "application/octet-stream",
+        size: buffer.length,
       });
     }
   }
@@ -353,7 +371,6 @@ exports.uploadMultipleDicomXray = async (req, res) => {
         index,
         totalFiles: files.length,
       })
-      
     );
     await Promise.all(jobPromises);
 
@@ -377,7 +394,6 @@ exports.uploadMultipleDicomXray = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 // Get request for fetching the Abnormalities from the xray
 exports.getXrayAbnormalities = async (req, res) => {
@@ -1272,7 +1288,6 @@ exports.getNormalAbnormalXrays = async (req, res) => {
   }
 };
 
-
 async function fetchPinCodesFromXray(doctorId) {
   try {
     // Fetch patients associated with the doctorId, selecting only the location field
@@ -1297,14 +1312,12 @@ async function fetchPinCodesFromXray(doctorId) {
   }
 }
 
-
 exports.getHeatMapLink = async (req, res) => {
   try {
     const doctorId = req.doctor._id;
 
     // 1) Fetch pin codes from DB
     const pinCodes = await fetchPinCodesFromXray(doctorId);
-
 
     console.log("Fetched pin codes:", pinCodes);
 
@@ -1340,4 +1353,3 @@ exports.getHeatMapLink = async (req, res) => {
     });
   }
 };
-

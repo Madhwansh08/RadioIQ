@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const AuthController = require("../controllers/authController");
-const {authMiddleware} = require("./../middleware/authMiddleware");
+const { authMiddleware } = require("./../middleware/authMiddleware");
 const upload = require("../config/multer");
 const endPoint = require("../endPoints.js");
 
@@ -134,9 +134,7 @@ router.put(endPoint.updateDoctor, authMiddleware, AuthController.updateDoctor);
  */
 router.post(endPoint.resetPassword, AuthController.resetPassword);
 
-
-
-router.get(endPoint.logout , AuthController.logoutDoctor);
+router.get(endPoint.logout, AuthController.logoutDoctor);
 
 /**
  * @swagger
@@ -158,7 +156,6 @@ router.get(endPoint.userAuth, authMiddleware, (req, res) => {
   const { password, ...doctorData } = req.doctor.toObject();
   res.status(200).json({ ok: true, user: doctorData });
 });
-
 
 /**
  * @swagger

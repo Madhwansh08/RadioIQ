@@ -14,6 +14,7 @@ function getUsbMountPaths() {
   ];
 
   let devices = [];
+
   roots.forEach(root => {
     if (fs.existsSync(root)) {
       try {
@@ -22,25 +23,30 @@ function getUsbMountPaths() {
           let stat;
           try {
             stat = fs.lstatSync(devicePath);
-          } catch {
+          } catch (err) {
+            console.error(`Error reading stats for ${devicePath}:`, err.message);
             return;
           }
+
           if (stat.isDirectory()) {
             devices.push(devicePath);
           }
         });
-      } catch {}
+      } catch (err) {
+        console.error(`Error reading directory ${root}:`, err.message);
+      }
     }
   });
+
   return devices;
 }
-
 /**
  * Recursively builds a tree of files and folders starting at dir.
  * Returns an array of entries: { path, name, type: "file"|"directory", children? }
  */
 function listFolderTree(dir) {
   if (!fs.existsSync(dir)) return [];
+
   let entries = [];
   try {
     fs.readdirSync(dir).forEach(file => {
@@ -48,9 +54,11 @@ function listFolderTree(dir) {
       let stat;
       try {
         stat = fs.lstatSync(filePath);
-      } catch {
+      } catch (err) {
+        console.error(`Failed to read stats for ${filePath}:`, err.message);
         return;
       }
+
       if (stat.isDirectory()) {
         entries.push({
           path: filePath,
@@ -66,10 +74,12 @@ function listFolderTree(dir) {
         });
       }
     });
-  } catch {}
+  } catch (err) {
+    console.error(`Failed to read directory ${dir}:`, err.message);
+  }
+
   return entries;
 }
-
 /**
  * Helper: Promise-based delay
  */
