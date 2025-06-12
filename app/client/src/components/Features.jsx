@@ -1,15 +1,38 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ModalDiseaseInfo from "./ModalDiseaseInfo";
 
 const Features = () => {
   const [activeFeature, setActiveFeature] = useState(null);
+  const [diseaseModalOpen, setDiseaseModalOpen] = useState(false);
 
   const features = [
     {
       id: 1,
       title: "Abnormalities Detection",
-      description:
-        "Identify and highlight 50 potential abnormalities in medical images using advanced AI algorithms for faster diagnostics.",
+      description: (
+        <>
+          Identify and highlight{" "}
+          <span
+            className="underline text-[#5c60c6] font-semibold cursor-pointer"
+            onClick={e => {
+              e.stopPropagation();
+              setDiseaseModalOpen(true);
+            }}
+            tabIndex={0}
+            onKeyDown={e => {
+              if (e.key === "Enter" || e.key === " ") {
+                setDiseaseModalOpen(true);
+              }
+            }}
+            role="button"
+            aria-label="Show 7 potential abnormalities"
+          >
+            7 potential abnormalities
+          </span>{" "}
+          in medical images using advanced AI algorithms for faster diagnostics.
+        </>
+      ),
       icon: (
         <svg
           className="flex-shrink-0 w-7 h-7 text-[#5c60c6]"
@@ -93,6 +116,7 @@ const Features = () => {
 
   return (
     <section className="py-10 dark:bg-[#fdfdfd] bg-[#030811] sm:py-16 lg:py-24">
+      <ModalDiseaseInfo open={diseaseModalOpen} onClose={() => setDiseaseModalOpen(false)} />
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8 flex flex-col lg:flex-row lg:items-start">
         <div className="lg:mr-16 lg:w-1/2 w-full">
           <h2 className="text-left text-4xl sm:text-6xl lg:text-7xl font-bold leading-tight dark:text-[#030811] text-[#fdfdfd] mb-6 sm:mb-10">

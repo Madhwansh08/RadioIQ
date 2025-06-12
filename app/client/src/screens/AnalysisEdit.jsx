@@ -12,6 +12,7 @@ import { CiUndo, CiRedo, CiSaveDown1 } from "react-icons/ci";
 import { RxReset } from "react-icons/rx";
 import { TbPoint } from "react-icons/tb";
 import { IoMdArrowBack } from "react-icons/io";
+import { FaInfoCircle } from "react-icons/fa";
 import { PiBoundingBoxThin, PiCircle, PiInfoBold } from "react-icons/pi";
 import { FaRegHandPaper, FaUser, FaDownload } from "react-icons/fa";
 import { BsCircleHalf, BsThreeDots } from "react-icons/bs";
@@ -26,6 +27,9 @@ import freegif from "../assets/RV_free.gif";
 import ToolTip from "../components/ToolTip";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import ModalDiseaseInfo from "../components/ModalDiseaseInfo";
+import UsbFolderPicker from "../components/UsbFolderPicker";
+import { BarLoader } from "../components/BarLoader";
 
 const SemiCircle = lazy(() => import("../components/SemiCircle"));
 const AbnormalityBar = lazy(() => import("../components/AbnormalityBar"));
@@ -54,6 +58,10 @@ const AnalysisEdit = () => {
   const [annotationSaved, setAnnotationSaved] = useState(true);
   const [isPatientDrawerOpen, setIsPatientDrawerOpen] = useState(false);
   const [isToolDrawerOpen, setIsToolDrawerOpen] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [usbModalOpen, setUsbModalOpen] = useState(false);
+  const [pendingImageBlob, setPendingImageBlob] = useState(null);
+  const [savingToUsb, setSavingToUsb] = useState(false);
 
   const navigate = useNavigate();
   const auth = useSelector((state) => state.auth);
@@ -411,21 +419,19 @@ const AnalysisEdit = () => {
       if (canvas) {
         canvas.toBlob((blob) => {
           if (blob) {
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `annotated-image-${xraySlug}.png`;
-            link.click();
+            setPendingImageBlob(blob);
+            setUsbModalOpen(true); // Open USB picker modal
           } else {
-            throw new Error("Canvas conversion failed.");
+            toast.error("Canvas conversion failed.");
           }
         }, "image/png");
       }
-      toast.success("Annotated Image downloaded successfully!");
     } catch (error) {
-      console.error("Error downloading canvas image:", error);
-      toast.error("Failed to download the image. Please try again.");
+      console.error("Error preparing image for USB save:", error);
+      toast.error("Failed to prepare image. Please try again.");
     }
   };
+
 
   const handleGoBack = useCallback(() => navigate(-1), [navigate]);
 
@@ -487,7 +493,7 @@ const AnalysisEdit = () => {
     <div className="flex flex-col md:flex-row min-h-screen dark:bg-[#030811] bg-[#fdfdfd]">
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 w-full bg-[#030811] p-2 flex justify-between items-center z-10">
-      <button
+        <button
           onClick={handleGoBack}
           className="text-[#fdfdfd]"
         >
@@ -766,7 +772,9 @@ const AnalysisEdit = () => {
           </Suspense>
         </div>
 
-        <div className="text-center absolute bottom-10 items-center justify-center">
+        <div className="flex flex-col text-center mt-[50%] items-center justify-center">
+          {/* Modal */}
+          <ModalDiseaseInfo open={showInfoModal} onClose={() => setShowInfoModal(false)} />
           <h2 className="text-2xl mt-3 ml-0 font-bold dark:text-[#fdfdfd] text-[#030811]">
             TB Probability
           </h2>
@@ -783,17 +791,26 @@ const AnalysisEdit = () => {
             />
           </Suspense>
 
-          <div>
-            {memoizedAbnormalities.length > 0 && (
-              <div>
-                <Suspense fallback={<div>Loading...</div>}>
-                  <AbnormalityBar abnormalities={memoizedAbnormalities} />
-                </Suspense>
-              </div>
+          <div className="flex flex-row justify-center w-full">
+            {memoizedAbnormalities.length > 0 ? (
+              // <div>
+              <Suspense fallback={<div>Loading...</div>}>
+                <AbnormalityBar abnormalities={memoizedAbnormalities} />
+              </Suspense>
+              // </div>
+            ) : (
+              <div className="mt-7 pt-9 text-center text-2xl font-semibold">No abnormalities found</div>
             )}
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="absolute flex right-2 mt-10 text-[#5c60c6] h-9 w-9 hover:text-[#45639b] bg-gray-200 dark:bg-gray-800 rounded-full p-2 shadow-lg"
+              aria-label="Show Disease Info"
+              type="button"
+            >
+              <FaInfoCircle size={20} />
+            </button>
           </div>
-
-          <div className="pt-40 items-center justify-center">
+          <div className="pt-10 items-center justify-center">
             <button
               onClick={handleDownload}
               className="bg-[#5c60c6] hover:bg-[#030811] border-2 border-[#fdfdfd] text-[#fdfdfd] font-semibold py-2 px-8 rounded-full items-center gap-2"
@@ -803,6 +820,46 @@ const AnalysisEdit = () => {
           </div>
         </div>
       </div>
+
+      {/* USB Folder Picker Modal */}
+      <UsbFolderPicker
+        open={usbModalOpen}
+        onClose={() => setUsbModalOpen(false)}
+        onSelectFolder={async (folderPath) => {
+          setUsbModalOpen(false);
+          if (!pendingImageBlob) return;
+          setSavingToUsb(true);
+          const formData = new FormData();
+          formData.append("file", pendingImageBlob, `xray-${xraySlug}.png`);
+          formData.append("targetPath", folderPath);
+
+          try {
+            const response = await fetch(`${config.API_URL}/api/save-to-usb`, {
+              method: "POST",
+              body: formData,
+            });
+            if (response.ok) {
+              toast.success("Image saved to USB successfully!");
+            } else {
+              const data = await response.json();
+              toast.error("Error saving image to USB: " + (data.error || "Unknown error"));
+            }
+          } catch (err) {
+            toast.error("Failed to save image to USB: " + err.message);
+          } finally {
+            setSavingToUsb(false);
+            setPendingImageBlob(null);
+          }
+        }}
+      />
+      {savingToUsb && (
+        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center dark:bg-[#030811]/50 bg-[#fdfdfd]/50 bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="flex flex-col items-center">
+            <BarLoader />
+            <span className="mt-4 text-lg text-[#5c60c6]">Saving image to USB...</span>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Toolbar */}
       <MobileToolbar />
@@ -833,20 +890,30 @@ const AnalysisEdit = () => {
                 </Suspense>
               </div>
               <div>
-              <SemiCircle percentage={(xrayData?.tbScore * 100).toFixed(0)} />
-              <h2 className="text-2xl font-bold">TB Probability</h2>
+                {/* Modal */}
+                <ModalDiseaseInfo open={showInfoModal} onClose={() => setShowInfoModal(false)} />
+                <SemiCircle percentage={(xrayData?.tbScore * 100).toFixed(0)} />
+                <h2 className="text-2xl font-bold">TB Probability</h2>
               </div>
-              <div>
-                {memoizedAbnormalities.length > 0 && (
-                  <div>
-                    <Suspense fallback={<div>Loading...</div>}>
-                      <AbnormalityBar abnormalities={memoizedAbnormalities} />
-                    </Suspense>
-                  </div>
+              <div className="flex flex-row justify-center w-full">
+                {memoizedAbnormalities.length > 0 ? (
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <AbnormalityBar abnormalities={memoizedAbnormalities} />
+                  </Suspense>
+                ) : (
+                  <div className="mt-7 pt-9 text-center text-2xl font-semibold">No abnormalities found</div>
                 )}
+                <button
+                  onClick={() => setShowInfoModal(true)}
+                  className="absolute flex mt-10 right-2 text-[#5c60c6] h-9 w-9 hover:text-[#45639b] bg-gray-200 dark:bg-gray-800 rounded-full p-2 shadow-lg"
+                  aria-label="Show Disease Info"
+                  type="button"
+                >
+                  <FaInfoCircle size={20} />
+                </button>
               </div>
 
-              <div className="mt-10 pt-10 items-center justify-center">
+              <div className="mt-2 pt-2 items-center justify-center">
                 <button
                   onClick={handleDownload}
                   className="bg-[#5c60c6] hover:bg-[#030811] border-2 border-[#fdfdfd] text-[#fdfdfd] font-semibold py-2 px-8 rounded-full flex items-center gap-2 mx-auto"

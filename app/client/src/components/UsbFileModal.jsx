@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import config from "../utils/config";
 
 function getDeviceLabel(devicePath) {
   if (devicePath.includes("/gvfs/mtp:")) return "Android Device";
@@ -92,10 +93,9 @@ function FolderTree({
               <button
                 className={`text-left w-full px-2 py-1 rounded flex items-center
                   focus:outline-none focus:ring-2 focus:ring-[#5c60c6]
-                  ${
-                    selectedFilePaths.has(node.path)
-                      ? "bg-[#5c60c6] text-white"
-                      : "hover:bg-[#5c60c6] hover:text-white dark:hover:bg-[#5c60c6] dark:text-[#fdfdfd] text-[#030811]"
+                  ${selectedFilePaths.has(node.path)
+                    ? "bg-[#5c60c6] text-white"
+                    : "hover:bg-[#5c60c6] hover:text-white dark:hover:bg-[#5c60c6] dark:text-[#fdfdfd] text-[#030811]"
                   }
                 `}
                 tabIndex={0}
@@ -107,7 +107,7 @@ function FolderTree({
                 <input
                   type="checkbox"
                   checked={selectedFilePaths.has(node.path)}
-                  onChange={() => {}} // No-op: checkbox is controlled by button click
+                  onChange={() => { }} // No-op: checkbox is controlled by button click
                   className="mr-2 accent-[#5c60c6] dark:accent-[#fdfdfd]"
                   tabIndex={-1}
                   readOnly
@@ -133,29 +133,29 @@ export default function UsbFileModal({ open, onClose, onFileSelect }) {
   const [expandedPaths, setExpandedPaths] = useState(new Set());
 
   useEffect(() => {
-  if (!open) return;
-  setLoading(true);
-  setError(null);
+    if (!open) return;
+    setLoading(true);
+    setError(null);
 
-  function fetchDevices() {
-    fetch("http://localhost:7000/api/usb-files")
-      .then(res => res.json())
-      .then(data => {
-        console.log("USB API Response:", data);
-        setDevices(data.devices || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError("Failed to load devices: " + err.message);
-        setLoading(false);
-      });
-  }
+    function fetchDevices() {
+      fetch(`${config.API_URL}/api/usb-files`)
+        .then(res => res.json())
+        .then(data => {
+          console.log("USB API Response:", data);
+          setDevices(data.devices || []);
+          setLoading(false);
+        })
+        .catch(err => {
+          setError("Failed to load devices: " + err.message);
+          setLoading(false);
+        });
+    }
 
-  fetchDevices();
-  const interval = setInterval(fetchDevices, 2000); // Poll every 2 seconds
+    fetchDevices();
+    const interval = setInterval(fetchDevices, 1000); // Poll every 2 seconds
 
-  return () => clearInterval(interval);
-}, [open]);
+    return () => clearInterval(interval);
+  }, [open]);
 
   // Helper to flatten selected files for upload
   const allFiles = [];
@@ -192,8 +192,10 @@ export default function UsbFileModal({ open, onClose, onFileSelect }) {
         {/* Header */}
         <div className="p-6 pb-2 border-b border-[#eee] dark:border-[#222] flex-shrink-0">
           <button
-            className="absolute top-2 right-2 text-[#5c60c6] dark:text-[#fdfdfd] focus:outline-none focus:ring-2 focus:ring-[#5c60c6]"
+            className="absolute top-2 right-2 text-[#5c60c6] dark:text-[#fdfdfd] focus:outline-none focus:ring-2 focus:ring-[#5c60c6] text-2xl"
             onClick={onClose}
+            aria-label="Close USB Folder Picker"
+            type="button"
           >
             &times;
           </button>
@@ -240,11 +242,10 @@ export default function UsbFileModal({ open, onClose, onFileSelect }) {
             Cancel
           </button>
           <button
-            className={`px-4 py-2 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#4750b3] ${
-              allFiles.length > 0
+            className={`px-4 py-2 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#4750b3] ${allFiles.length > 0
                 ? "bg-[#5c60c6] hover:bg-[#4750b3]"
                 : "bg-gray-300 cursor-not-allowed"
-            }`}
+              }`}
             onClick={() => {
               if (allFiles.length > 0) {
                 onFileSelect(allFiles);

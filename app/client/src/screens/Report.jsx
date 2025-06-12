@@ -1,4 +1,4 @@
-import React, { useEffect, useState , useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import { useSelector } from "react-redux";
@@ -16,6 +16,7 @@ import "jspdf-autotable";
 import lowTbImage from '../assets/low.png';
 import mediumTbImage from '../assets/medium.png';
 import highTbImage from '../assets/high.png';
+import UsbFolderPicker from "../components/UsbFolderPicker";
 
 const Report = () => {
   const [patientData, setPatientData] = useState(null);
@@ -27,6 +28,8 @@ const Report = () => {
   const [modelAnnotatedImageUrl, setModelAnnotatedImageUrl] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedReportType, setSelectedReportType] = useState(null);
+  const [usbModalOpen, setUsbModalOpen] = useState(false);
+  const [pendingPdfBlob, setPendingPdfBlob] = useState(null);
   const auth = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
@@ -313,7 +316,10 @@ const Report = () => {
       doc.text("*** End of Report ***", 135, yOffset + 15, { align: "center" });
 
       // Save PDF
-      doc.save(`${patientSlug}-CXR-Report.pdf`);
+      // doc.save(`${patientSlug}-CXR-Report.pdf`);
+      const pdfBlob = doc.output("blob");
+      setPendingPdfBlob(pdfBlob);
+      setUsbModalOpen(true);
     } catch {
       console.error("Error generating report:", error);
       toast.error("Failed to generate report. Please try again.");
@@ -561,7 +567,7 @@ const Report = () => {
       y += 15;
       checkYPosition(15);
 
-      
+
 
       // ----------------- Differential Section -----------------
       doc.setFont("helvetica", "bold");
@@ -581,7 +587,7 @@ const Report = () => {
           y += 6;
           checkYPosition(6);
         });
-      } 
+      }
 
       // ----------------- Doctors Notes -----------------
       doc.setFont("helvetica", "bold");
@@ -672,13 +678,16 @@ const Report = () => {
         doc.text("(MD,Radiologist)", x, y);
 
         // Save the PDF
-        doc.save(
-          `${patientSlug}-${
-            report.examDate
-              ? new Date(report.examDate).toLocaleDateString()
-              : new Date().toLocaleDateString()
-          }-report.pdf`
-        );
+        // doc.save(
+        //   `${patientSlug}-${report.examDate
+        //     ? new Date(report.examDate).toLocaleDateString()
+        //     : new Date().toLocaleDateString()
+        //   }-report.pdf`
+        // );
+        const pdfBlob = doc.output("blob");
+        setPendingPdfBlob(pdfBlob);
+        setUsbModalOpen(true);
+
 
         // Stop the loader after all operations are done
         setReportLoading(false);
@@ -728,7 +737,7 @@ const Report = () => {
         `${config.API_URL}/api/reports/${patientSlug}/${xraySlug}/report`
       );
       const report = response.data.report;
-      
+
       // Create a new jsPDF instance using A4 dimensions
       const doc = new jsPDF({
         orientation: "portrait",
@@ -959,7 +968,7 @@ const Report = () => {
       y += 15;
       checkYPosition(15);
 
-      
+
 
       // ----------------- Differential Section -----------------
       doc.setFont("helvetica", "bold");
@@ -1095,14 +1104,14 @@ const Report = () => {
 
           const heatmapImg2 = new Image();
           heatmapImg2.crossOrigin = "anonymous";
-          heatmapImg2.src = xrayData.heatmap || xrayData.url; 
+          heatmapImg2.src = xrayData.heatmap || xrayData.url;
           heatmapImg2.onload = async () => {
             doc.addImage(heatmapImg2, "PNG", x, y, 150, 150);
-  
+
             // Draw border for heatmap image
             doc.setDrawColor(0, 0, 0);
             doc.rect(x, y, 150, 150);
-  
+
             y += 160;
 
             // ----------------- Transformed Image Section -----------------
@@ -1122,102 +1131,106 @@ const Report = () => {
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
 
-          const transformedImg1 = new Image();
-          transformedImg1.crossOrigin = "anonymous";
-          transformedImg1.src = await generateNegativeImage(xrayData?.url) || xrayData?.url;
-          transformedImg1.onload = () => {
-            doc.addImage(transformedImg1, "PNG", x, y, 75, 75);
-            doc.text("Negative Image", x, y - 2);
-
-            // Draw border for transformed image
-            doc.setDrawColor(0, 0, 0);
-            doc.rect(x + 80, y, 75, 75);
-
-            // Load and add the transformed image2
-            const transformedImg2 = new Image();
-            transformedImg2.crossOrigin = "anonymous";
-            transformedImg2.src = annotatedImageUrl || xrayData?.url;
-            transformedImg2.onload = () => {
-              doc.addImage(transformedImg2, "PNG", x + 80, y, 75, 75);
-              doc.text("Doctor's Annotated", x + 80, y - 2);
+            const transformedImg1 = new Image();
+            transformedImg1.crossOrigin = "anonymous";
+            transformedImg1.src = await generateNegativeImage(xrayData?.url) || xrayData?.url;
+            transformedImg1.onload = () => {
+              doc.addImage(transformedImg1, "PNG", x, y, 75, 75);
+              doc.text("Negative Image", x, y - 2);
 
               // Draw border for transformed image
               doc.setDrawColor(0, 0, 0);
               doc.rect(x + 80, y, 75, 75);
 
-              y += 82;
-
-              //second row
-              // Draw border for image placeholder
-              doc.setDrawColor(0, 0, 0);
-              doc.rect(x, y, 75, 75);
-              doc.setFontSize(10);
-              doc.setTextColor(0, 0, 0);
-              // Load and add the transformed image
-              const transformedImg3 = new Image();
-              transformedImg3.crossOrigin = "anonymous";
-              transformedImg3.src = xrayData?.ctr?.imageUrl || xrayData?.url;
-              transformedImg3.onload = () => {
-                doc.addImage(transformedImg3, "PNG", x, y, 75, 75);
-                doc.text("CTR", x, y - 2);
+              // Load and add the transformed image2
+              const transformedImg2 = new Image();
+              transformedImg2.crossOrigin = "anonymous";
+              transformedImg2.src = annotatedImageUrl || xrayData?.url;
+              transformedImg2.onload = () => {
+                doc.addImage(transformedImg2, "PNG", x + 80, y, 75, 75);
+                doc.text("Doctor's Annotated", x + 80, y - 2);
 
                 // Draw border for transformed image
                 doc.setDrawColor(0, 0, 0);
                 doc.rect(x + 80, y, 75, 75);
 
-                // Load and add the transformed image2
-                const transformedImg4 = new Image();
-                transformedImg4.crossOrigin = "anonymous";
-                transformedImg4.src = xrayData?.clahe || xrayData?.url;
-                transformedImg4.onload = () => {
-                  doc.addImage(transformedImg4, "PNG", x + 80, y, 75, 75);
-                  doc.text("Clahe", x + 80, y - 2);
+                y += 82;
+
+                //second row
+                // Draw border for image placeholder
+                doc.setDrawColor(0, 0, 0);
+                doc.rect(x, y, 75, 75);
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                // Load and add the transformed image
+                const transformedImg3 = new Image();
+                transformedImg3.crossOrigin = "anonymous";
+                transformedImg3.src = xrayData?.ctr?.imageUrl || xrayData?.url;
+                transformedImg3.onload = () => {
+                  doc.addImage(transformedImg3, "PNG", x, y, 75, 75);
+                  doc.text("CTR", x, y - 2);
 
                   // Draw border for transformed image
                   doc.setDrawColor(0, 0, 0);
                   doc.rect(x + 80, y, 75, 75);
 
-                  y += 90;
-                  x -= 17;
-                  doc.setLineWidth(0.025); // Thin line
-                  doc.line(x, y, doc.internal.pageSize.getWidth() - x, y);
-                  doc.setFont("helvetica", "normal");
-                  doc.setFontSize(12);
-                  doc.text("*** End of Report ***", 105, y + 5, {
-                    align: "center",
-                  });
+                  // Load and add the transformed image2
+                  const transformedImg4 = new Image();
+                  transformedImg4.crossOrigin = "anonymous";
+                  transformedImg4.src = xrayData?.clahe || xrayData?.url;
+                  transformedImg4.onload = () => {
+                    doc.addImage(transformedImg4, "PNG", x + 80, y, 75, 75);
+                    doc.text("Clahe", x + 80, y - 2);
 
-                  y += 15;
-                  // Dotted underline for signature
-                  doc.setLineDash([1, 1], 0);
-                  doc.line(x, y, x + 50, y);
-                  y += 10;
+                    // Draw border for transformed image
+                    doc.setDrawColor(0, 0, 0);
+                    doc.rect(x + 80, y, 75, 75);
 
-                  // Doctor's name and designation
-                  doc.setFont("helvetica", "bold");
-                  doc.setFontSize(12);
-                  doc.text(formData.radiologist, x, y);
-                  y += 7;
-                  doc.setFontSize(10);
-                  doc.setFont("helvetica", "normal");
-                  doc.text("(MD,Radiologist)", x, y);
+                    y += 90;
+                    x -= 17;
+                    doc.setLineWidth(0.025); // Thin line
+                    doc.line(x, y, doc.internal.pageSize.getWidth() - x, y);
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(12);
+                    doc.text("*** End of Report ***", 105, y + 5, {
+                      align: "center",
+                    });
 
-                  // Save the PDF
-                  doc.save(
-                    `${patientSlug}-${
-                      report.examDate
-                        ? new Date(report.examDate).toLocaleDateString()
-                        : new Date().toLocaleDateString()
-                    }-report.pdf`
-                  );
+                    y += 15;
+                    // Dotted underline for signature
+                    doc.setLineDash([1, 1], 0);
+                    doc.line(x, y, x + 50, y);
+                    y += 10;
 
-                  // Stop the loader after all operations are done
-                  setReportLoading(false);
+                    // Doctor's name and designation
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.text(formData.radiologist, x, y);
+                    y += 7;
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    doc.text("(MD,Radiologist)", x, y);
+
+                    // Save the PDF
+                    // doc.save(
+                    //   `${patientSlug}-${report.examDate
+                    //     ? new Date(report.examDate).toLocaleDateString()
+                    //     : new Date().toLocaleDateString()
+                    //   }-report.pdf`
+                    // );
+                    const pdfBlob = doc.output("blob");
+                    setPendingPdfBlob(pdfBlob);
+                    setUsbModalOpen(true);
+
+
+                    // Stop the loader after all operations are done
+                    setReportLoading(false);
+                  };
                 };
               };
             };
-          };
-        }};
+          }
+        };
       };
       // };
     } catch (error) {
@@ -1256,7 +1269,7 @@ const Report = () => {
 
     if (isMobile) {
       toast.warn("This page is for desktop devices; design may change on other devices");
-      warnedRef.current = true;    
+      warnedRef.current = true;
     }
   }, []);
 
@@ -1347,6 +1360,48 @@ const Report = () => {
           ))}
         </div>
       </div>
+
+      {/*USB path picker modal with toast notifications and loader*/}
+      <UsbFolderPicker
+        open={usbModalOpen}
+        onClose={() => setUsbModalOpen(false)}
+        onSelectFolder={async (folderPath) => {
+          setUsbModalOpen(false);
+          if (!pendingPdfBlob) return;
+          setReportLoading(true); // Show loader
+          const formData = new FormData();
+          formData.append("file", pendingPdfBlob, "CXR-Report.pdf");
+          formData.append("targetPath", folderPath);
+
+          try {
+            const response = await fetch(`${config.API_URL}/api/save-to-usb`, {
+              method: "POST",
+              body: formData,
+            });
+            if (response.ok) {
+              toast.success("Report saved to USB!");
+            } else {
+              const data = await response.json();
+              toast.error("Error saving to USB: " + (data.error || "Unknown error"));
+            }
+          } catch (err) {
+            toast.error("Failed to save to USB: " + err.message);
+          } finally {
+            setReportLoading(false); // Hide loader
+            setPendingPdfBlob(null);
+          }
+        }}
+      />
+      {/* Loader overlay when saving to USB */}
+      {reportLoading && (
+        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center dark:bg-[#030811]/50 bg-[#fdfdfd]/50 bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="flex flex-col items-center">
+            <BarLoader />
+            <span className="mt-4 text-lg text-[#5c60c6]">Saving report to USB...</span>
+          </div>
+        </div>
+      )}
+
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80">
