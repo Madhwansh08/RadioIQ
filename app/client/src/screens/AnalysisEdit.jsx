@@ -12,6 +12,7 @@ import { CiUndo, CiRedo, CiSaveDown1 } from "react-icons/ci";
 import { RxReset } from "react-icons/rx";
 import { TbPoint } from "react-icons/tb";
 import { IoMdArrowBack } from "react-icons/io";
+import { FaInfoCircle } from "react-icons/fa";
 import { PiBoundingBoxThin, PiCircle, PiInfoBold } from "react-icons/pi";
 import { FaRegHandPaper, FaUser, FaDownload } from "react-icons/fa";
 import { BsCircleHalf, BsThreeDots } from "react-icons/bs";
@@ -26,6 +27,7 @@ import freegif from "../assets/RV_free.gif";
 import ToolTip from "../components/ToolTip";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import ModalDiseaseInfo from "../components/ModalDiseaseInfo";
 
 const SemiCircle = lazy(() => import("../components/SemiCircle"));
 const AbnormalityBar = lazy(() => import("../components/AbnormalityBar"));
@@ -54,6 +56,7 @@ const AnalysisEdit = () => {
   const [annotationSaved, setAnnotationSaved] = useState(true);
   const [isPatientDrawerOpen, setIsPatientDrawerOpen] = useState(false);
   const [isToolDrawerOpen, setIsToolDrawerOpen] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const navigate = useNavigate();
   const auth = useSelector((state) => state.auth);
@@ -487,7 +490,7 @@ const AnalysisEdit = () => {
     <div className="flex flex-col md:flex-row min-h-screen dark:bg-[#030811] bg-[#fdfdfd]">
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 w-full bg-[#030811] p-2 flex justify-between items-center z-10">
-      <button
+        <button
           onClick={handleGoBack}
           className="text-[#fdfdfd]"
         >
@@ -766,7 +769,9 @@ const AnalysisEdit = () => {
           </Suspense>
         </div>
 
-        <div className="text-center absolute bottom-10 items-center justify-center">
+        <div className="flex flex-col text-center mt-[50%] items-center justify-center">
+          {/* Modal */}
+          <ModalDiseaseInfo open={showInfoModal} onClose={() => setShowInfoModal(false)} />
           <h2 className="text-2xl mt-3 ml-0 font-bold dark:text-[#fdfdfd] text-[#030811]">
             TB Probability
           </h2>
@@ -783,17 +788,26 @@ const AnalysisEdit = () => {
             />
           </Suspense>
 
-          <div>
-            {memoizedAbnormalities.length > 0 && (
-              <div>
-                <Suspense fallback={<div>Loading...</div>}>
-                  <AbnormalityBar abnormalities={memoizedAbnormalities} />
-                </Suspense>
-              </div>
+          <div className="flex flex-row justify-center w-full">
+            {memoizedAbnormalities.length > 0 ? (
+              // <div>
+              <Suspense fallback={<div>Loading...</div>}>
+                <AbnormalityBar abnormalities={memoizedAbnormalities} />
+              </Suspense>
+              // </div>
+            ) : (
+              <div className="mt-7 pt-9 text-center text-2xl font-semibold">No abnormalities found</div>
             )}
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="absolute flex right-2 mt-10 text-[#5c60c6] h-9 w-9 hover:text-[#45639b] bg-gray-200 dark:bg-gray-800 rounded-full p-2 shadow-lg"
+              aria-label="Show Disease Info"
+              type="button"
+            >
+              <FaInfoCircle size={20} />
+            </button>
           </div>
-
-          <div className="pt-40 items-center justify-center">
+          <div className="pt-10 items-center justify-center">
             <button
               onClick={handleDownload}
               className="bg-[#5c60c6] hover:bg-[#030811] border-2 border-[#fdfdfd] text-[#fdfdfd] font-semibold py-2 px-8 rounded-full items-center gap-2"
@@ -833,20 +847,30 @@ const AnalysisEdit = () => {
                 </Suspense>
               </div>
               <div>
-              <SemiCircle percentage={(xrayData?.tbScore * 100).toFixed(0)} />
-              <h2 className="text-2xl font-bold">TB Probability</h2>
+                {/* Modal */}
+                <ModalDiseaseInfo open={showInfoModal} onClose={() => setShowInfoModal(false)} />
+                <SemiCircle percentage={(xrayData?.tbScore * 100).toFixed(0)} />
+                <h2 className="text-2xl font-bold">TB Probability</h2>
               </div>
-              <div>
-                {memoizedAbnormalities.length > 0 && (
-                  <div>
-                    <Suspense fallback={<div>Loading...</div>}>
-                      <AbnormalityBar abnormalities={memoizedAbnormalities} />
-                    </Suspense>
-                  </div>
+              <div className="flex flex-row justify-center w-full">
+                {memoizedAbnormalities.length > 0 ? (
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <AbnormalityBar abnormalities={memoizedAbnormalities} />
+                  </Suspense>
+                ) : (
+                  <div className="mt-7 pt-9 text-center text-2xl font-semibold">No abnormalities found</div>
                 )}
+                <button
+                  onClick={() => setShowInfoModal(true)}
+                  className="absolute flex mt-10 right-2 text-[#5c60c6] h-9 w-9 hover:text-[#45639b] bg-gray-200 dark:bg-gray-800 rounded-full p-2 shadow-lg"
+                  aria-label="Show Disease Info"
+                  type="button"
+                >
+                  <FaInfoCircle size={20} />
+                </button>
               </div>
 
-              <div className="mt-10 pt-10 items-center justify-center">
+              <div className="mt-2 pt-2 items-center justify-center">
                 <button
                   onClick={handleDownload}
                   className="bg-[#5c60c6] hover:bg-[#030811] border-2 border-[#fdfdfd] text-[#fdfdfd] font-semibold py-2 px-8 rounded-full flex items-center gap-2 mx-auto"

@@ -13,6 +13,7 @@ import {
   FaArrowRight,
   FaUser,
 } from "react-icons/fa6";
+import { FaInfoCircle } from "react-icons/fa";
 import { GoZoomIn, GoZoomOut } from "react-icons/go";
 import Progress from "../components/Progress";
 import config from "../utils/config";
@@ -28,6 +29,7 @@ import {
 import CustomTooltip from "../components/CustomToolTip";
 import { FaCross } from "react-icons/fa";
 import ResponsiveTable from "../components/ResponsiveTable";
+import ModalDiseaseInfo from "../components/ModalDiseaseInfo";
 
 const Heatmap = () => {
   const { patientSlug, xraySlug } = useParams();
@@ -57,11 +59,12 @@ const Heatmap = () => {
   const [selectedView, setSelectedView] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const auth = useSelector((state) => state.auth);
-  const [loading,setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   // const { setModelAnnotatedImage } = useAnnotatedImage();
 
   const [isPatientDrawerOpen, setIsPatientDrawerOpen] = useState(false);
   const [isAnalysisDrawerOpen, setIsAnalysisDrawerOpen] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
 
   const patientHistoryColumns = [
@@ -76,10 +79,10 @@ const Heatmap = () => {
           ? xray.tbScore > 90
             ? 'Critical'
             : xray.tbScore > 60
-            ? 'High'
-            : xray.tbScore > 30
-            ? 'Medium'
-            : 'Low'
+              ? 'High'
+              : xray.tbScore > 30
+                ? 'Medium'
+                : 'Low'
           : '-',
     },
     {
@@ -134,10 +137,10 @@ const Heatmap = () => {
       render: (xray) =>
         xray.createdAt
           ? new Date(xray.createdAt).toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-            })
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })
           : '-',
     },
   ];
@@ -204,10 +207,10 @@ const Heatmap = () => {
       render: (caseItem) =>
         caseItem.xrays?.[0]?.date
           ? new Date(caseItem.xrays[0].date).toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-            })
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })
           : '-',
     },
   ];
@@ -300,8 +303,8 @@ const Heatmap = () => {
   }, []);
 
 
-  const drawImageRef=useRef()
-  
+  const drawImageRef = useRef()
+
 
   const drawImage = (callback) => {
     if (canvasRef.current && xrayData) {
@@ -616,7 +619,7 @@ const Heatmap = () => {
       </button>
     </div>
   );
-  
+
   const handleZoomAnnotation = (zoomType) => {
     setScale((prevScale) => {
       const newScale =
@@ -783,70 +786,70 @@ const Heatmap = () => {
         className="flex flex-col items-center gap-y-6"
       >
         <CustomTooltip title="AI Annotation">
-        <ToolbarButton
-          onClick={handleSegmentationToggle}
-          className={`rounded-xl p-2 ${segmentationActive ? "bg-red-500" : "dark:bg-[#030811] bg-[#fdfdfd]"} dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]`}
-          mouseY={mouseY}
-          label="AI Annotation"
-          isActive={segmentationActive}
-        >
-          {segmentationActive ? <FaRegEyeSlash size={20} /> : <FaRegEye size={20} />}
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={handleSegmentationToggle}
+            className={`rounded-xl p-2 ${segmentationActive ? "bg-red-500" : "dark:bg-[#030811] bg-[#fdfdfd]"} dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]`}
+            mouseY={mouseY}
+            label="AI Annotation"
+            isActive={segmentationActive}
+          >
+            {segmentationActive ? <FaRegEyeSlash size={20} /> : <FaRegEye size={20} />}
+          </ToolbarButton>
         </CustomTooltip>
         <CustomTooltip title="Smart Zoom">
-        <ToolbarButton
-          onClick={handleSmartZoom}
-          className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
-          mouseY={mouseY}
-          label="Smart Zoom"
-          isActive={smartZoomActive}
-        >
-          {smartZoomActive ? <MdZoomOutMap size={20} /> : <MdOutlineZoomInMap size={20} />}
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={handleSmartZoom}
+            className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
+            mouseY={mouseY}
+            label="Smart Zoom"
+            isActive={smartZoomActive}
+          >
+            {smartZoomActive ? <MdZoomOutMap size={20} /> : <MdOutlineZoomInMap size={20} />}
+          </ToolbarButton>
         </CustomTooltip>
         <CustomTooltip title="Heatmap">
-        <ToolbarButton
-          onClick={handleHeatmapClick}
-          className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
-          mouseY={mouseY}
-          label="Heatmap"
-        >
-          <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 1a.5.5 0 0 1 .5.5v5.243L9 7.1V4.72C9 3.77 9.77 3 10.72 3c.524 0 1.023.27 1.443.592.431.332.847.773 1.216 1.229.736.908 1.347 1.946 1.58 2.48.176.405.393 1.16.556 2.011.165.857.283 1.857.24 2.759-.04.867-.232 1.79-.837 2.33-.67.6-1.622.556-2.741-.004l-1.795-.897A2.5 2.5 0 0 1 9 11.264V8.329l-1-.715-1 .715V7.214c-.1 0-.202.03-.29.093l-2.5 1.786a.5.5 0 1 0 .58.814L7 8.329v2.935A2.5 2.5 0 0 1 5.618 13.5l-1.795.897c-1.12.56-2.07.603-2.741.004-.605-.54-.798-1.463-.838-2.33-.042-.902.076-1.902.24-2.759.164-.852.38-1.606.558-2.012.232-.533.843-1.571 1.579-2.479.37-.456.785-.897 1.216-1.229C4.257 3.27 4.756 3 5.28 3 6.23 3 7 3.77 7 4.72V7.1l.5-.357V1.5A.5.5 0 0 1 8 1m3.21 8.907a.5.5 0 1 0 .58-.814l-2.5-1.786A.5.5 0 0 0 9 7.214V8.33z" />
-          </svg>
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={handleHeatmapClick}
+            className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
+            mouseY={mouseY}
+            label="Heatmap"
+          >
+            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 1a.5.5 0 0 1 .5.5v5.243L9 7.1V4.72C9 3.77 9.77 3 10.72 3c.524 0 1.023.27 1.443.592.431.332.847.773 1.216 1.229.736.908 1.347 1.946 1.58 2.48.176.405.393 1.16.556 2.011.165.857.283 1.857.24 2.759-.04.867-.232 1.79-.837 2.33-.67.6-1.622.556-2.741-.004l-1.795-.897A2.5 2.5 0 0 1 9 11.264V8.329l-1-.715-1 .715V7.214c-.1 0-.202.03-.29.093l-2.5 1.786a.5.5 0 1 0 .58.814L7 8.329v2.935A2.5 2.5 0 0 1 5.618 13.5l-1.795.897c-1.12.56-2.07.603-2.741.004-.605-.54-.798-1.463-.838-2.33-.042-.902.076-1.902.24-2.759.164-.852.38-1.606.558-2.012.232-.533.843-1.571 1.579-2.479.37-.456.785-.897 1.216-1.229C4.257 3.27 4.756 3 5.28 3 6.23 3 7 3.77 7 4.72V7.1l.5-.357V1.5A.5.5 0 0 1 8 1m3.21 8.907a.5.5 0 1 0 .58-.814l-2.5-1.786A.5.5 0 0 0 9 7.214V8.33z" />
+            </svg>
+          </ToolbarButton>
         </CustomTooltip>
         <CustomTooltip title="Quadrant">
-        <ToolbarButton
-          onClick={handleQuadrantClick}
-          className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
-          mouseY={mouseY}
-          label="Quadrant"
-        >
-          <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M0 0h16v16H0zm1 1v6.5h6.5V1zm7.5 0v6.5H15V1zM15 8.5H8.5V15H15zM7.5 15V8.5H1V15z" />
-          </svg>
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={handleQuadrantClick}
+            className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
+            mouseY={mouseY}
+            label="Quadrant"
+          >
+            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M0 0h16v16H0zm1 1v6.5h6.5V1zm7.5 0v6.5H15V1zM15 8.5H8.5V15H15zM7.5 15V8.5H1V15z" />
+            </svg>
+          </ToolbarButton>
         </CustomTooltip>
         <CustomTooltip title="Zoom in">
-        <ToolbarButton
-          onClick={annotationsActive ? () => handleZoomAnnotation("in") : handleZoomIn}
-          className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
-          mouseY={mouseY}
-          label="Zoom In"
-        >
-          <GoZoomIn size={24} />
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={annotationsActive ? () => handleZoomAnnotation("in") : handleZoomIn}
+            className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
+            mouseY={mouseY}
+            label="Zoom In"
+          >
+            <GoZoomIn size={24} />
+          </ToolbarButton>
         </CustomTooltip>
         <CustomTooltip title="Zoom out">
-        <ToolbarButton
-          onClick={annotationsActive ? () => handleZoomAnnotation("out") : handleZoomOut}
-          className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
-          mouseY={mouseY}
-          label="Zoom Out"
-        >
-          <GoZoomOut size={24} />
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={annotationsActive ? () => handleZoomAnnotation("out") : handleZoomOut}
+            className="dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] dark:hover:bg-[#5c60c6] hover:bg-[#5c60c6]"
+            mouseY={mouseY}
+            label="Zoom Out"
+          >
+            <GoZoomOut size={24} />
+          </ToolbarButton>
         </CustomTooltip>
         {["brightness", "contrast", "negative"].map((filter) => (
           <div key={filter} className="relative">
@@ -862,26 +865,26 @@ const Heatmap = () => {
               mouseY={mouseY}
               label={filter.charAt(0).toUpperCase() + filter.slice(1)}
             >
-             
+
               {filter === "brightness" && (
-                 <CustomTooltip title="Brightness">
-                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708" />
-                </svg>
+                <CustomTooltip title="Brightness">
+                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708" />
+                  </svg>
                 </CustomTooltip>
               )}
               {filter === "contrast" && (
                 <CustomTooltip title="Contrast">
-                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0-1V2a6 6 0 1 0 0 12z" />
-                </svg>
+                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0-1V2a6 6 0 1 0 0 12z" />
+                  </svg>
                 </CustomTooltip>
               )}
               {filter === "negative" && (
                 <CustomTooltip title="Negative">
-                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8zm7-4.5a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 1 0v-8a.5.5 0 0 0-.5-.5z" />
-                </svg>
+                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8zm7-4.5a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 1 0v-8a.5.5 0 0 0-.5-.5z" />
+                  </svg>
                 </CustomTooltip>
               )}
             </ToolbarButton>
@@ -893,53 +896,53 @@ const Heatmap = () => {
           </div>
         ))}
         <CustomTooltip title="Reset">
-        <ToolbarButton
-          onClick={resetFilters}
-          className="bg-[#5c60c6] text-[#fdfdfd] hover:bg-[#030811]"
-          mouseY={mouseY}
-          label="Reset Filters"
-        >
-          <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-            <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z" />
-            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466" />
-          </svg>
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={resetFilters}
+            className="bg-[#5c60c6] text-[#fdfdfd] hover:bg-[#030811]"
+            mouseY={mouseY}
+            label="Reset Filters"
+          >
+            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+              <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z" />
+              <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466" />
+            </svg>
+          </ToolbarButton>
         </CustomTooltip>
         <CustomTooltip title="Edit">
-        <ToolbarButton
-          onClick={handleEditClick}
-          className="bg-[#5c60c6] text-[#fdfdfd] hover:text-[#5c60c6] hover:bg-[#fdfdfd]"
-          mouseY={mouseY}
-          label="Edit Page"
-        >
-          <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325" />
-          </svg>
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={handleEditClick}
+            className="bg-[#5c60c6] text-[#fdfdfd] hover:text-[#5c60c6] hover:bg-[#fdfdfd]"
+            mouseY={mouseY}
+            label="Edit Page"
+          >
+            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325" />
+            </svg>
+          </ToolbarButton>
         </CustomTooltip>
         <CustomTooltip title="Note">
-        <ToolbarButton
-          onClick={toggleModal}
-          className="bg-[#5c60c6] text-[#fdfdfd] hover:text-[#5c60c6] hover:bg-[#fdfdfd]"
-          mouseY={mouseY}
-          label="Feedback"
-        >
-          <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M2.5 1A1.5 1.5 0 0 0 1 2.5v11A1.5 1.5 0 0 0 2.5 15h6.086a1.5 1.5 0 0 0 1.06-.44l4.915-4.914A1.5 1.5 0 0 0 15 8.586V2.5A1.5 1.5 0 0 0 13.5 1zM2 2.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5V8H9.5A1.5 1.5 0 0 0 8 9.5V14H2.5a.5.5 0 0 1-.5-.5zm7 11.293V9.5a.5.5 0 0 1 .5-.5h4.293z" />
-          </svg>
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={toggleModal}
+            className="bg-[#5c60c6] text-[#fdfdfd] hover:text-[#5c60c6] hover:bg-[#fdfdfd]"
+            mouseY={mouseY}
+            label="Feedback"
+          >
+            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M2.5 1A1.5 1.5 0 0 0 1 2.5v11A1.5 1.5 0 0 0 2.5 15h6.086a1.5 1.5 0 0 0 1.06-.44l4.915-4.914A1.5 1.5 0 0 0 15 8.586V2.5A1.5 1.5 0 0 0 13.5 1zM2 2.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5V8H9.5A1.5 1.5 0 0 0 8 9.5V14H2.5a.5.5 0 0 1-.5-.5zm7 11.293V9.5a.5.5 0 0 1 .5-.5h4.293z" />
+            </svg>
+          </ToolbarButton>
         </CustomTooltip>
         <CustomTooltip title="Back">
-        <ToolbarButton
-          onClick={() => navigate(-1)}
-          className="bg-[#5c60c6] text-[#fdfdfd] hover:text-[#5c60c6] hover:bg-[#fdfdfd]"
-          mouseY={mouseY}
-          label="Back"
-        >
-          <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-            <path fillRule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
-          </svg>
-        </ToolbarButton>
+          <ToolbarButton
+            onClick={() => navigate(-1)}
+            className="bg-[#5c60c6] text-[#fdfdfd] hover:text-[#5c60c6] hover:bg-[#fdfdfd]"
+            mouseY={mouseY}
+            label="Back"
+          >
+            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+              <path fillRule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
+            </svg>
+          </ToolbarButton>
         </CustomTooltip>
       </motion.div>
     );
@@ -951,16 +954,16 @@ const Heatmap = () => {
       <div className="md:hidden fixed top-0 left-0 w-full bg-[#030811] p-2 flex justify-between items-center z-10">
         {/* <span className="text-[#fdfdfd]">{patientData?.patient.patientId}</span> */}
         <button
-            onClick={() => setIsPatientDrawerOpen(true)}
-            className="mr-2 text-[#fdfdfd]"
-          >
-            <FaUser size={20} />
-          </button>
-<div className="flex items-center ml-20 pl-5">
-  <img className="w-[55%] h-13 invert grayscale dark:invert-0 hover:opacity-80 cursor-pointer" src="https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png" alt="Logo" onClick={() => navigate("/")} />
-</div>
+          onClick={() => setIsPatientDrawerOpen(true)}
+          className="mr-2 text-[#fdfdfd]"
+        >
+          <FaUser size={20} />
+        </button>
+        <div className="flex items-center ml-20 pl-5">
+          <img className="w-[55%] h-13 invert grayscale dark:invert-0 hover:opacity-80 cursor-pointer" src="https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png" alt="Logo" onClick={() => navigate("/")} />
+        </div>
         <div>
-      
+
           <button
             onClick={() => setIsAnalysisDrawerOpen(true)}
             className="text-[#fdfdfd]"
@@ -1009,7 +1012,7 @@ const Heatmap = () => {
               </div>
             </div>
             <div className="w-full mt-4 h-64 overflow-y-auto">
-            <ResponsiveTable
+              <ResponsiveTable
                 columns={
                   activeTab === 'Patient History'
                     ? patientHistoryColumns
@@ -1019,10 +1022,10 @@ const Heatmap = () => {
                   activeTab === 'Patient History'
                     ? paginate(historyData.xrays)
                     : paginate(
-                        similarCaseData.sort(
-                          (a, b) => b.xrays?.[0]?.tbScore - a.xrays?.[0]?.tbScore
-                        )
+                      similarCaseData.sort(
+                        (a, b) => b.xrays?.[0]?.tbScore - a.xrays?.[0]?.tbScore
                       )
+                    )
                 }
               />
             </div>
@@ -1117,10 +1120,10 @@ const Heatmap = () => {
         onMouseDown={scale > 1 ? handleMouseDown : null}
       >
         {loading && (
-                  <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-                    <GridLoader color="#5c60c6" size={24}/>
-                  </div>
-                )}
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+            <GridLoader color="#5c60c6" size={24} />
+          </div>
+        )}
         <canvas
           id="canvasId"
           ref={canvasRef}
@@ -1140,19 +1143,29 @@ const Heatmap = () => {
           />
         </div>
         <div className="text-center items-center ">
+          {/* Modal */}
+          <ModalDiseaseInfo open={showInfoModal} onClose={() => setShowInfoModal(false)} />
           <h2 className="text-2xl mt-3 ml-5 font-bold">TB Probability</h2>
           <div className="mt-4 pl-10">
             <SemiCircle percentage={(xrayData?.tbScore * 100).toFixed(0)} />
           </div>
-          <div>
+          <div className="flex flex-row ">
             {abnormalities.length > 0 ? (
               <AbnormalityBar abnormalities={abnormalities} />
             ) : (
               <div className="mt-7 pt-9 text-center text-2xl font-semibold">No abnormalities found</div>
             )}
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="absolute flex right-2 mt-10 text-[#5c60c6] h-9 w-9 hover:text-[#45639b] bg-gray-200 dark:bg-gray-800 rounded-full p-2 shadow-lg"
+              aria-label="Show Disease Info"
+              type="button"
+            >
+              <FaInfoCircle size={20} />
+            </button>
           </div>
-     
-          <div className="py-10 pl-20 ml-10 mt-20 items-center justify-center">
+
+          <div className="py-10 pl-20 ml-10 mt-2 items-center justify-center">
             <button
               onClick={handleDownload}
               className="bg-[#5c60c6] hover:bg-[#030811] border-2 border-[#fdfdfd] text-[#fdfdfd] font-semibold py-2 px-8 rounded-full flex items-center gap-2"
@@ -1179,7 +1192,7 @@ const Heatmap = () => {
               onClick={() => setIsPatientDrawerOpen(false)}
               className="mb-4 p-2 bg-[#5c60c6] text-[#fdfdfd] rounded"
             >
-           <MdClose size={20} />
+              <MdClose size={20} />
             </button>
             <h1 className="text-2xl font-bold text-center">CXR Analysis</h1>
             <div className="flex justify-center items-center mt-5 mb-8 border-2">
@@ -1215,10 +1228,10 @@ const Heatmap = () => {
                   activeTab === 'Patient History'
                     ? paginate(historyData.xrays)
                     : paginate(
-                        similarCaseData.sort(
-                          (a, b) => b.xrays?.[0]?.tbScore - a.xrays?.[0]?.tbScore
-                        )
+                      similarCaseData.sort(
+                        (a, b) => b.xrays?.[0]?.tbScore - a.xrays?.[0]?.tbScore
                       )
+                    )
                 }
               />
             </div>
@@ -1328,18 +1341,28 @@ const Heatmap = () => {
               />
             </div>
             <div className="text-center">
+              {/* Modal */}
+              <ModalDiseaseInfo open={showInfoModal} onClose={() => setShowInfoModal(false)} />
               <h2 className="text-2xl mt-3 font-bold">TB Probability</h2>
               <div className="mt-4">
                 <SemiCircle percentage={(xrayData?.tbScore * 100).toFixed(0)} />
               </div>
-              <div>
+              <div className="flex flex-row justify-center w-full">
                 {abnormalities.length > 0 ? (
                   <AbnormalityBar abnormalities={abnormalities} />
                 ) : (
                   <div className="mt-7 pt-9 text-center text-2xl font-semibold">No abnormalities found</div>
                 )}
+                <button
+                  onClick={() => setShowInfoModal(true)}
+                  className="absolute flex right-2 mt-10 text-[#5c60c6] h-9 w-9 hover:text-[#45639b] bg-gray-200 dark:bg-gray-900 rounded-full p-2 shadow-lg"
+                  aria-label="Show Disease Info"
+                  type="button"
+                >
+                  <FaInfoCircle size={20} />
+                </button>
               </div>
-              <div className="mt-10 pt-10 pl-10 ml-10 items-center justify-center">
+              <div className="mt-2 pt-2 flex items-center justify-center">
                 <button
                   onClick={handleDownload}
                   className="bg-[#5c60c6] hover:bg-[#030811] border-2 border-[#fdfdfd] text-[#fdfdfd] font-semibold py-2 px-8 rounded-full flex items-center gap-2"
