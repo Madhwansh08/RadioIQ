@@ -1361,9 +1361,7 @@ const Report = () => {
         </div>
       </div>
 
-      {/*
-  USB path picker modal with toast notifications and loader
-*/}
+      {/*USB path picker modal with toast notifications and loader*/}
       <UsbFolderPicker
         open={usbModalOpen}
         onClose={() => setUsbModalOpen(false)}
@@ -1403,7 +1401,7 @@ const Report = () => {
           </div>
         </div>
       )}
-      
+
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80">

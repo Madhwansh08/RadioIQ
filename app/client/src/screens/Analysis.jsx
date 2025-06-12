@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AbnormalityBar from "../components/AbnormalityBar";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { GridLoader } from "react-spinners";
+import { BarLoader } from "../components/BarLoader";
 import {
   FaRegEye,
   FaRegEyeSlash,
@@ -28,6 +29,7 @@ import {
 import CustomTooltip from "../components/CustomToolTip";
 import ResponsiveTable from "../components/ResponsiveTable";
 import ModalDiseaseInfo from "../components/ModalDiseaseInfo";
+import UsbFolderPicker from "../components/UsbFolderPicker";
 
 const Analysis = () => {
   const { patientSlug, xraySlug } = useParams();
@@ -62,6 +64,9 @@ const Analysis = () => {
   const [isAnalysisDrawerOpen, setIsAnalysisDrawerOpen] = useState(false);
   const [isToolbarDrawerOpen, setIsToolbarDrawerOpen] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [usbModalOpen, setUsbModalOpen] = useState(false);
+  const [pendingImageBlob, setPendingImageBlob] = useState(null);
+  const [savingToUsb, setSavingToUsb] = useState(false);
 
   const patientHistoryColumns = [
     {
@@ -675,13 +680,15 @@ const Analysis = () => {
   const handleDownload = () => {
     const canvas = document.getElementById("canvasId");
     if (canvas) {
-      const image = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.href = image;
-      link.download = `xray-${xraySlug}.png`;
-      link.click();
+      canvas.toBlob((blob) => {
+        if (blob) {
+          setPendingImageBlob(blob);
+          setUsbModalOpen(true);
+        } else {
+          toast.error("Failed to prepare image for USB download.");
+        }
+      }, "image/png");
     }
-    toast.success("Image downloaded successfully!");
   };
 
   const toggleModal = () => setIsModalOpen((prev) => !prev);
@@ -1192,7 +1199,7 @@ const Analysis = () => {
                 </button>
               </div>
             </div>
-            <div className="w-full mt-4 h-64 overflow-y-auto">
+            <div className="w-full mt-4 h-64 overflow-y-auto custom-scrollbar">
               <ResponsiveTable
                 columns={
                   activeTab === 'Patient History'
@@ -1372,6 +1379,46 @@ const Analysis = () => {
           </div>
         </div>
       </div>
+
+      {/* USB Folder Picker Modal */}
+      <UsbFolderPicker
+        open={usbModalOpen}
+        onClose={() => setUsbModalOpen(false)}
+        onSelectFolder={async (folderPath) => {
+          setUsbModalOpen(false);
+          if (!pendingImageBlob) return;
+          setSavingToUsb(true);
+          const formData = new FormData();
+          formData.append("file", pendingImageBlob, `xray-${xraySlug}.png`);
+          formData.append("targetPath", folderPath);
+
+          try {
+            const response = await fetch(`${config.API_URL}/api/save-to-usb`, {
+              method: "POST",
+              body: formData,
+            });
+            if (response.ok) {
+              toast.success("Image saved to USB successfully!");
+            } else {
+              const data = await response.json();
+              toast.error("Error saving image to USB: " + (data.error || "Unknown error"));
+            }
+          } catch (err) {
+            toast.error("Failed to save image to USB: " + err.message);
+          } finally {
+            setSavingToUsb(false);
+            setPendingImageBlob(null);
+          }
+        }}
+      />
+      {savingToUsb && (
+        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center dark:bg-[#030811]/50 bg-[#fdfdfd]/50 bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="flex flex-col items-center">
+            <BarLoader />
+            <span className="mt-4 text-lg text-[#5c60c6]">Saving image to USB...</span>
+          </div>
+        </div>
+      )}
 
       {/* Patient Drawer (Mobile) */}
       {isPatientDrawerOpen && (

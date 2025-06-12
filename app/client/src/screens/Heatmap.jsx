@@ -30,6 +30,8 @@ import CustomTooltip from "../components/CustomToolTip";
 import { FaCross } from "react-icons/fa";
 import ResponsiveTable from "../components/ResponsiveTable";
 import ModalDiseaseInfo from "../components/ModalDiseaseInfo";
+import { BarLoader } from "../components/BarLoader";
+import UsbFolderPicker from "../components/UsbFolderPicker";
 
 const Heatmap = () => {
   const { patientSlug, xraySlug } = useParams();
@@ -65,6 +67,9 @@ const Heatmap = () => {
   const [isPatientDrawerOpen, setIsPatientDrawerOpen] = useState(false);
   const [isAnalysisDrawerOpen, setIsAnalysisDrawerOpen] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [usbModalOpen, setUsbModalOpen] = useState(false);
+  const [pendingImageBlob, setPendingImageBlob] = useState(null);
+  const [savingToUsb, setSavingToUsb] = useState(false);
 
 
   const patientHistoryColumns = [
@@ -646,13 +651,15 @@ const Heatmap = () => {
   const handleDownload = () => {
     const canvas = document.getElementById("canvasId");
     if (canvas) {
-      const image = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.href = image;
-      link.download = `xray-${xraySlug}.png`;
-      link.click();
+      canvas.toBlob((blob) => {
+        if (blob) {
+          setPendingImageBlob(blob);
+          setUsbModalOpen(true);  // Open USB picker modal
+        } else {
+          toast.error("Canvas conversion failed.");
+        }
+      }, "image/png");
     }
-    toast.success("Image downloaded successfully!");
   };
 
   const toggleModal = () => setIsModalOpen((prev) => !prev);
@@ -1011,7 +1018,7 @@ const Heatmap = () => {
                 </button>
               </div>
             </div>
-            <div className="w-full mt-4 h-64 overflow-y-auto">
+            <div className="w-full mt-4 h-64 overflow-y-auto custom-scrollbar">
               <ResponsiveTable
                 columns={
                   activeTab === 'Patient History'
@@ -1179,6 +1186,46 @@ const Heatmap = () => {
           </div>
         </div>
       </div>
+
+      {/* USB Folder Picker Modal */}
+      <UsbFolderPicker
+        open={usbModalOpen}
+        onClose={() => setUsbModalOpen(false)}
+        onSelectFolder={async (folderPath) => {
+          setUsbModalOpen(false);
+          if (!pendingImageBlob) return;
+          setSavingToUsb(true);
+          const formData = new FormData();
+          formData.append("file", pendingImageBlob, `xray-${xraySlug}.png`);
+          formData.append("targetPath", folderPath);
+
+          try {
+            const response = await fetch(`${config.API_URL}/api/save-to-usb`, {
+              method: "POST",
+              body: formData,
+            });
+            if (response.ok) {
+              toast.success("Image saved to USB successfully!");
+            } else {
+              const data = await response.json();
+              toast.error("Error saving image to USB: " + (data.error || "Unknown error"));
+            }
+          } catch (err) {
+            toast.error("Failed to save image to USB: " + err.message);
+          } finally {
+            setSavingToUsb(false);
+            setPendingImageBlob(null);
+          }
+        }}
+      />
+      {savingToUsb && (
+        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center dark:bg-[#030811]/50 bg-[#fdfdfd]/50 bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="flex flex-col items-center">
+            <BarLoader />
+            <span className="mt-4 text-lg text-[#5c60c6]">Saving image to USB...</span>
+          </div>
+        </div>
+      )}
 
       {/* Patient Drawer (Mobile) */}
       {isPatientDrawerOpen && (

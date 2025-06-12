@@ -28,6 +28,8 @@ import ToolTip from "../components/ToolTip";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import ModalDiseaseInfo from "../components/ModalDiseaseInfo";
+import UsbFolderPicker from "../components/UsbFolderPicker";
+import { BarLoader } from "../components/BarLoader";
 
 const SemiCircle = lazy(() => import("../components/SemiCircle"));
 const AbnormalityBar = lazy(() => import("../components/AbnormalityBar"));
@@ -57,6 +59,9 @@ const AnalysisEdit = () => {
   const [isPatientDrawerOpen, setIsPatientDrawerOpen] = useState(false);
   const [isToolDrawerOpen, setIsToolDrawerOpen] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [usbModalOpen, setUsbModalOpen] = useState(false);
+  const [pendingImageBlob, setPendingImageBlob] = useState(null);
+  const [savingToUsb, setSavingToUsb] = useState(false);
 
   const navigate = useNavigate();
   const auth = useSelector((state) => state.auth);
@@ -414,21 +419,19 @@ const AnalysisEdit = () => {
       if (canvas) {
         canvas.toBlob((blob) => {
           if (blob) {
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `annotated-image-${xraySlug}.png`;
-            link.click();
+            setPendingImageBlob(blob);
+            setUsbModalOpen(true); // Open USB picker modal
           } else {
-            throw new Error("Canvas conversion failed.");
+            toast.error("Canvas conversion failed.");
           }
         }, "image/png");
       }
-      toast.success("Annotated Image downloaded successfully!");
     } catch (error) {
-      console.error("Error downloading canvas image:", error);
-      toast.error("Failed to download the image. Please try again.");
+      console.error("Error preparing image for USB save:", error);
+      toast.error("Failed to prepare image. Please try again.");
     }
   };
+
 
   const handleGoBack = useCallback(() => navigate(-1), [navigate]);
 
@@ -817,6 +820,46 @@ const AnalysisEdit = () => {
           </div>
         </div>
       </div>
+
+      {/* USB Folder Picker Modal */}
+      <UsbFolderPicker
+        open={usbModalOpen}
+        onClose={() => setUsbModalOpen(false)}
+        onSelectFolder={async (folderPath) => {
+          setUsbModalOpen(false);
+          if (!pendingImageBlob) return;
+          setSavingToUsb(true);
+          const formData = new FormData();
+          formData.append("file", pendingImageBlob, `xray-${xraySlug}.png`);
+          formData.append("targetPath", folderPath);
+
+          try {
+            const response = await fetch(`${config.API_URL}/api/save-to-usb`, {
+              method: "POST",
+              body: formData,
+            });
+            if (response.ok) {
+              toast.success("Image saved to USB successfully!");
+            } else {
+              const data = await response.json();
+              toast.error("Error saving image to USB: " + (data.error || "Unknown error"));
+            }
+          } catch (err) {
+            toast.error("Failed to save image to USB: " + err.message);
+          } finally {
+            setSavingToUsb(false);
+            setPendingImageBlob(null);
+          }
+        }}
+      />
+      {savingToUsb && (
+        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center dark:bg-[#030811]/50 bg-[#fdfdfd]/50 bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="flex flex-col items-center">
+            <BarLoader />
+            <span className="mt-4 text-lg text-[#5c60c6]">Saving image to USB...</span>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Toolbar */}
       <MobileToolbar />
