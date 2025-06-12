@@ -108,7 +108,7 @@ module.exports = {
     getNormalAbnormalXrays,
     updateXrayBySlug,
     getVerficationStatus,
-   requestVerificationOTP,
+    requestVerificationOTP,
     verifyVerificationOTP,
     uploadMetaDataDicom,
     getHeatMapLink,

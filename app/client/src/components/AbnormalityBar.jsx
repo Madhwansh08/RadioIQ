@@ -33,9 +33,14 @@ const AbnormalityBar = ({ abnormalities }) => {
   };
 
   return (
-    <div className="mt-7 pt-9">
+    <div className="mt-7 pt-9 w-full">
       <h2 className="text-2xl dark:text-[#fdfdfd] text-[#030811] font-bold">Abnormalities</h2>
-      <ul className="mt-4 space-y-4">
+      <span className="text-sm">
+        (detected {
+          abnormalities ? Array.from(new Set(abnormalities.map(a => a.name))).length : 0
+        } out of 7)
+      </span>
+      <ul className="mt-4 space-y-4 h-60 overflow-y-auto custom-scrollbar">
         {sortedAbnormalities.map((abnormality) => {
           const scorePercentage = (abnormality.score * 100).toFixed(1);
           const barColor = getColorByAbnormalityName(abnormality.name);

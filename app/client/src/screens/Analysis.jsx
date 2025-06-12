@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AbnormalityBar from "../components/AbnormalityBar";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { GridLoader } from "react-spinners";
+import { BarLoader } from "../components/BarLoader";
 import {
   FaRegEye,
   FaRegEyeSlash,
@@ -12,6 +13,7 @@ import {
   FaArrowRight,
   FaUser,
 } from "react-icons/fa6";
+import { FaInfoCircle } from "react-icons/fa";
 import { GoZoomIn, GoZoomOut } from "react-icons/go";
 import Progress from "../components/Progress";
 import config from "../utils/config";
@@ -26,6 +28,8 @@ import {
 } from "@heroicons/react/20/solid";
 import CustomTooltip from "../components/CustomToolTip";
 import ResponsiveTable from "../components/ResponsiveTable";
+import ModalDiseaseInfo from "../components/ModalDiseaseInfo";
+import UsbFolderPicker from "../components/UsbFolderPicker";
 
 const Analysis = () => {
   const { patientSlug, xraySlug } = useParams();
@@ -59,6 +63,10 @@ const Analysis = () => {
   const [isPatientDrawerOpen, setIsPatientDrawerOpen] = useState(false);
   const [isAnalysisDrawerOpen, setIsAnalysisDrawerOpen] = useState(false);
   const [isToolbarDrawerOpen, setIsToolbarDrawerOpen] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [usbModalOpen, setUsbModalOpen] = useState(false);
+  const [pendingImageBlob, setPendingImageBlob] = useState(null);
+  const [savingToUsb, setSavingToUsb] = useState(false);
 
   const patientHistoryColumns = [
     {
@@ -72,10 +80,10 @@ const Analysis = () => {
           ? xray.tbScore > 90
             ? 'Critical'
             : xray.tbScore > 60
-            ? 'High'
-            : xray.tbScore > 30
-            ? 'Medium'
-            : 'Low'
+              ? 'High'
+              : xray.tbScore > 30
+                ? 'Medium'
+                : 'Low'
           : '-',
     },
     {
@@ -130,10 +138,10 @@ const Analysis = () => {
       render: (xray) =>
         xray.createdAt
           ? new Date(xray.createdAt).toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-            })
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })
           : '-',
     },
   ];
@@ -199,10 +207,10 @@ const Analysis = () => {
       render: (caseItem) =>
         caseItem.xrays?.[0]?.date
           ? new Date(caseItem.xrays[0].date).toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-            })
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })
           : '-',
     },
   ];
@@ -279,7 +287,7 @@ const Analysis = () => {
           canvasRef.current.width = 1024;
           canvasRef.current.height = 1024;
         }
-  
+
         if (drawImageRef.current) {
           drawImageRef.current((ctx, { scaleToFit, offsetX, offsetY }) => {
             if (segmentationActive) {
@@ -319,8 +327,8 @@ const Analysis = () => {
     return () => {
       window.removeEventListener("resize", resizeCanvas);
     };
-  }, [segmentationActive, annotationsActive,  abnormalities]);   
-  
+  }, [segmentationActive, annotationsActive, abnormalities]);
+
 
   const drawImageRef = useRef();
 
@@ -480,7 +488,7 @@ const Analysis = () => {
     setScale((prevScale) => Math.max(prevScale - 0.1, 1));
   };
 
-  
+
 
   const handleSmartZoom = () => {
     if (!smartZoomActive) {
@@ -643,8 +651,8 @@ const Analysis = () => {
       </button>
     </div>
   )
-  
-  
+
+
 
   const handleZoomAnnotation = (zoomType) => {
     setScale((prevScale) => {
@@ -672,13 +680,15 @@ const Analysis = () => {
   const handleDownload = () => {
     const canvas = document.getElementById("canvasId");
     if (canvas) {
-      const image = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.href = image;
-      link.download = `xray-${xraySlug}.png`;
-      link.click();
+      canvas.toBlob((blob) => {
+        if (blob) {
+          setPendingImageBlob(blob);
+          setUsbModalOpen(true);
+        } else {
+          toast.error("Failed to prepare image for USB download.");
+        }
+      }, "image/png");
     }
-    toast.success("Image downloaded successfully!");
   };
 
   const toggleModal = () => setIsModalOpen((prev) => !prev);
@@ -888,10 +898,10 @@ const Analysis = () => {
               )}
             </ToolbarButton>
             {filter !== 'negative' && activeFilter === filter && (
-  <div className="absolute left-0 right-0 bottom-full mb-2 sm:left-full sm:top-0 sm:ml-2 sm:right-auto z-50">
-    {renderFilterSlider(filter)}
-  </div>
-)}
+              <div className="absolute left-0 right-0 bottom-full mb-2 sm:left-full sm:top-0 sm:ml-2 sm:right-auto z-50">
+                {renderFilterSlider(filter)}
+              </div>
+            )}
           </div>
         ))}
         <CustomTooltip title="Reset">
@@ -1047,7 +1057,7 @@ const Analysis = () => {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="fixed bottom-0 left-0 w-full bg-[#030811] p-4 z-50"
       >
-        
+
         <div className="flex flex-row items-center gap-x-4 overflow-x-auto">
           {["brightness", "contrast", "negative"].map((filter) => (
             <div key={filter} className="relative">
@@ -1124,11 +1134,11 @@ const Analysis = () => {
             </svg>
           </ToolbarButton>
           <button
-        onClick={() => setIsToolbarDrawerOpen(false)}
-        className="absolute  right-1 mr-5 bg-[#5c60c6] text-[#fdfdfd] rounded-full p-1 hover:bg-[#030811]"
-      >
-        <MdClose size={24} className="text-[#fdfdfd]" />
-   </button>
+            onClick={() => setIsToolbarDrawerOpen(false)}
+            className="absolute  right-1 mr-5 bg-[#5c60c6] text-[#fdfdfd] rounded-full p-1 hover:bg-[#030811]"
+          >
+            <MdClose size={24} className="text-[#fdfdfd]" />
+          </button>
         </div>
       </motion.div>
     );
@@ -1189,7 +1199,7 @@ const Analysis = () => {
                 </button>
               </div>
             </div>
-            <div className="w-full mt-4 h-64 overflow-y-auto">
+            <div className="w-full mt-4 h-64 overflow-y-auto custom-scrollbar">
               <ResponsiveTable
                 columns={
                   activeTab === 'Patient History'
@@ -1200,10 +1210,10 @@ const Analysis = () => {
                   activeTab === 'Patient History'
                     ? paginate(historyData.xrays)
                     : paginate(
-                        similarCaseData.sort(
-                          (a, b) => b.xrays?.[0]?.tbScore - a.xrays?.[0]?.tbScore
-                        )
+                      similarCaseData.sort(
+                        (a, b) => b.xrays?.[0]?.tbScore - a.xrays?.[0]?.tbScore
                       )
+                    )
                 }
               />
             </div>
@@ -1317,9 +1327,9 @@ const Analysis = () => {
 
       {/* Toolbar Drawer (Mobile) */}
       <div className="md:hidden">
-      {isToolbarDrawerOpen && (
-        <ToolbarDrawer />
-      )}
+        {isToolbarDrawerOpen && (
+          <ToolbarDrawer />
+        )}
       </div>
 
       {/* Right Sidebar (Desktop) */}
@@ -1333,18 +1343,28 @@ const Analysis = () => {
           />
         </div>
         <div className="text-center items-center">
+          {/* Modal */}
+          <ModalDiseaseInfo open={showInfoModal} onClose={() => setShowInfoModal(false)} />
           <h2 className="text-2xl mt-3 ml-5 font-bold">TB Probability</h2>
           <div className="mt-4 pl-10">
             <SemiCircle percentage={(xrayData?.tbScore * 100).toFixed(0)} />
           </div>
-          <div>
+          <div className="flex flex-row justify-center">
             {abnormalities.length > 0 ? (
               <AbnormalityBar abnormalities={abnormalities} />
             ) : (
               <div className="mt-7 pt-9 text-center text-2xl font-semibold">No abnormalities found</div>
             )}
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="absolute flex right-2 mt-10 text-[#5c60c6] h-9 w-9 hover:text-[#45639b] bg-gray-200 dark:bg-gray-800 rounded-full p-2 shadow-lg"
+              aria-label="Show Disease Info"
+              type="button"
+            >
+              <FaInfoCircle size={20} />
+            </button>
           </div>
-          <div className="py-10 pl-20 ml-10 mt-20 items-center justify-center">
+          <div className="py-10 pl-20 ml-10 mt-2 items-center justify-center">
             <button
               onClick={handleDownload}
               className="bg-[#5c60c6] hover:bg-[#030811] border-2 border-[#fdfdfd] text-[#fdfdfd] font-semibold py-2 px-8 rounded-full flex items-center gap-2"
@@ -1359,6 +1379,46 @@ const Analysis = () => {
           </div>
         </div>
       </div>
+
+      {/* USB Folder Picker Modal */}
+      <UsbFolderPicker
+        open={usbModalOpen}
+        onClose={() => setUsbModalOpen(false)}
+        onSelectFolder={async (folderPath) => {
+          setUsbModalOpen(false);
+          if (!pendingImageBlob) return;
+          setSavingToUsb(true);
+          const formData = new FormData();
+          formData.append("file", pendingImageBlob, `xray-${xraySlug}.png`);
+          formData.append("targetPath", folderPath);
+
+          try {
+            const response = await fetch(`${config.API_URL}/api/save-to-usb`, {
+              method: "POST",
+              body: formData,
+            });
+            if (response.ok) {
+              toast.success("Image saved to USB successfully!");
+            } else {
+              const data = await response.json();
+              toast.error("Error saving image to USB: " + (data.error || "Unknown error"));
+            }
+          } catch (err) {
+            toast.error("Failed to save image to USB: " + err.message);
+          } finally {
+            setSavingToUsb(false);
+            setPendingImageBlob(null);
+          }
+        }}
+      />
+      {savingToUsb && (
+        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center dark:bg-[#030811]/50 bg-[#fdfdfd]/50 bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="flex flex-col items-center">
+            <BarLoader />
+            <span className="mt-4 text-lg text-[#5c60c6]">Saving image to USB...</span>
+          </div>
+        </div>
+      )}
 
       {/* Patient Drawer (Mobile) */}
       {isPatientDrawerOpen && (
@@ -1408,10 +1468,10 @@ const Analysis = () => {
                   activeTab === 'Patient History'
                     ? paginate(historyData.xrays)
                     : paginate(
-                        similarCaseData.sort(
-                          (a, b) => b.xrays?.[0]?.tbScore - a.xrays?.[0]?.tbScore
-                        )
+                      similarCaseData.sort(
+                        (a, b) => b.xrays?.[0]?.tbScore - a.xrays?.[0]?.tbScore
                       )
+                    )
                 }
               />
             </div>
@@ -1521,18 +1581,28 @@ const Analysis = () => {
               />
             </div>
             <div className="text-center">
+              {/* Modal */}
+              <ModalDiseaseInfo open={showInfoModal} onClose={() => setShowInfoModal(false)} />
               <h2 className="text-2xl mt-3 font-bold">TB Probability</h2>
               <div className="mt-4">
                 <SemiCircle percentage={(xrayData?.tbScore * 100).toFixed(0)} />
               </div>
-              <div>
+              <div className="flex flex-row justify-center w-full">
                 {abnormalities.length > 0 ? (
                   <AbnormalityBar abnormalities={abnormalities} />
                 ) : (
                   <div className="mt-7 pt-9 text-center text-2xl font-semibold">No abnormalities found</div>
                 )}
+                <button
+                  onClick={() => setShowInfoModal(true)}
+                  className="absolute flex mt-10 right-2 text-[#5c60c6] h-9 w-9 hover:text-[#45639b] bg-gray-200 dark:bg-gray-900 rounded-full p-2 shadow-lg"
+                  aria-label="Show Disease Info"
+                  type="button"
+                >
+                  <FaInfoCircle size={20} />
+                </button>
               </div>
-              <div className="mt-10 pt-10 pl-10 ml-10 items-center justify-center">
+              <div className="mt-4 pt-2 flex items-center justify-center">
                 <button
                   onClick={handleDownload}
                   className="bg-[#5c60c6] hover:bg-[#030811] border-2 border-[#fdfdfd] text-[#fdfdfd] font-semibold py-2 px-8 rounded-full flex items-center gap-2"
@@ -1547,45 +1617,45 @@ const Analysis = () => {
 
       {/* Feedback Modal */}
       {isModalOpen && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
-    <div className="relative bg-[#030811] p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md">
-      {/* close button */}
-      <button
-        onClick={toggleModal}
-        className="absolute top-3 right-3 text-[#fdfdfd]"
-      >
-        <MdClose size={24} />
-      </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
+          <div className="relative bg-[#030811] p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md">
+            {/* close button */}
+            <button
+              onClick={toggleModal}
+              className="absolute top-3 right-3 text-[#fdfdfd]"
+            >
+              <MdClose size={24} />
+            </button>
 
-      <h2 className="text-xl font-bold text-[#fdfdfd] mb-4">
-        Submit Note
-      </h2>
+            <h2 className="text-xl font-bold text-[#fdfdfd] mb-4">
+              Submit Note
+            </h2>
 
-      <textarea
-        className="w-full h-40 p-4 bg-[#030811] text-[#fdfdfd] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5c60c6]"
-        placeholder="Enter your note here..."
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-      />
+            <textarea
+              className="w-full h-40 p-4 bg-[#030811] text-[#fdfdfd] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5c60c6]"
+              placeholder="Enter your note here..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
 
-      <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">
-        <button
-          type="button"
-          onClick={toggleModal}
-          className="w-full sm:w-auto py-2 px-4 bg-gray-500 text-[#fdfdfd] rounded-lg hover:bg-gray-700"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleNoteSubmit}
-          className="w-full sm:w-auto py-2 px-4 bg-[#5c60c6] text-[#fdfdfd] rounded-lg hover:bg-[#030811] border border-[#5c60c6]"
-        >
-          Submit
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">
+              <button
+                type="button"
+                onClick={toggleModal}
+                className="w-full sm:w-auto py-2 px-4 bg-gray-500 text-[#fdfdfd] rounded-lg hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleNoteSubmit}
+                className="w-full sm:w-auto py-2 px-4 bg-[#5c60c6] text-[#fdfdfd] rounded-lg hover:bg-[#030811] border border-[#5c60c6]"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

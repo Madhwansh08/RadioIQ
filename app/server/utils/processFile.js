@@ -246,7 +246,7 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
     const fileNameLower = file.toLowerCase();
     let patientId, age, sex, location, dicomFileResponse;
     let isInverted = null;
-
+processDicomFile
     // Get buffer from multer (if file.buffer exists) or disk
     const fileBuffer = file.buffer || (await fs.promises.readFile(file));
     const uniqueId   = await getNanoid();
