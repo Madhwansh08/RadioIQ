@@ -10,25 +10,24 @@ import {
 import { FaUser } from "react-icons/fa";
 import Logo from "../../assets/logo.png";
 import { CiTimer , CiUser , CiEdit} from "react-icons/ci";
-
+ 
 const navigation = [
   { name: "Dashboard", path: "/dashboard", icon: HomeIcon },
   {name: 'X-rays Record' , path:"/dashboard/tables", icon: CiTimer},
-  {name: "MetaData Extract" , path:"/dashboard/metadata", icon: CiEdit},
   { name: "Profile", path: "/dashboard/settings", icon: CiUser },
  
   
 ];
-
+ 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
-
+ 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
+ 
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Mobile Sidebar */}
@@ -75,7 +74,7 @@ const DashboardLayout = () => {
           </nav>
         </div>
       </div>
-
+ 
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col dark:bg-[#030811] bg-[#fdfdfd] dark:text-white text-[#030811]">
         <div className="flex items-center justify-center h-16 border-b border-gray-300 dark:border-gray-700">
@@ -103,7 +102,7 @@ const DashboardLayout = () => {
           ))}
         </nav>
       </div>
-
+ 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
@@ -123,5 +122,7 @@ const DashboardLayout = () => {
     </div>
   );
 };
-
+ 
 export default DashboardLayout;
+ 
+ 

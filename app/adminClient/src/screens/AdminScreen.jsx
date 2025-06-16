@@ -6,12 +6,13 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import config from "../utils/config";
-
+import { authHeader } from "../utils/authHeader";
+ 
 export default function AdminScreen() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminExists, setAdminExists] = useState(null); // null = unknown
   const [doctors, setDoctors] = useState([]);
-
+ 
   useEffect(() => {
     const checkAdminStatus = async () => {
       const isAuth = sessionStorage.getItem("isAuthenticated") === "true";
@@ -27,6 +28,7 @@ export default function AdminScreen() {
         if (!exists) {
           // If admin no longer exists, force logout
           sessionStorage.removeItem("isAuthenticated");
+          sessionStorage.removeItem("adminToken");
           setIsAuthenticated(false);
           setDoctors([]);
           return; // stop further checks
@@ -45,26 +47,29 @@ export default function AdminScreen() {
     checkAdminStatus();
   }, []);
   
-
+ 
   const handleAdminRegistered = () => {
     console.log("Admin registered. Updating state.");
     sessionStorage.setItem("adminExists", "true");
-    setAdminExists(true); // triggers re-render to login screen
+    setAdminExists(true);
   };
   
   
   const fetchDoctors = async () => {
     try {
       const response = await axios.get(`${config.API_URL}/admin/doctors`, {
-        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("adminToken")}`,
+        },
       });
-      setDoctors(response.data.doctors);
+      
+      setDoctors(response?.data?.doctors);
     } catch (error) {
       toast.error("Access denied or session expired");
       console.error("Error fetching doctors:", error);
     }
   };
-
+ 
   if (adminExists === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -72,11 +77,11 @@ export default function AdminScreen() {
       </div>
     );
   }
-
+ 
   return (
-    <div className="flex justify-center w-full min-h-screen bg-gray-100">
-      <ToastContainer position="top-right" autoClose={2000} hideProgressBar />
-
+    <div className="flex justify-center w-full min-h-screen">
+      <ToastContainer position="top-right" autoClose={2000} hideProgressBar newestOnTop={true} />
+ 
       {(() => {
         if (!adminExists) {
           return <AdminRegister onRegisterSuccess={handleAdminRegistered} />;

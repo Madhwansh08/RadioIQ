@@ -1,9 +1,9 @@
 /* Created By - Sarthak Raj
-    Date:- 13 November 2024 
+    Date:- 13 November 2024
 */
-
+ 
 // Desc: Controller for authentication routes
-
+ 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const Doctor = require("../models/Doctor");
@@ -13,7 +13,8 @@ const emailQueue = require("../queues/emailQueue");
 const cache = require("../middleware/cache");
 const emailVerificationQueue = require("../queues/emailVerificationQueue");
 const { uploadToS3 } = require("../config/s3");
-
+const { escape } = require("querystring");
+ 
 async function getNanoid() {
   const { customAlphabet } = await import("nanoid");
   // Define an alphabet of digits 1–9 and uppercase letters A–Z
@@ -22,7 +23,7 @@ async function getNanoid() {
   const nanoid = customAlphabet(alphabet, 6);
   return nanoid();
 }
-
+ 
 // Register a new doctor
 exports.registerDoctor = async (req, res) => {
   try {
@@ -45,19 +46,19 @@ exports.registerDoctor = async (req, res) => {
       patients = [],
     } = req.body;
     console.log("Registering doctor with data:", req.body);
-
+ 
     if (!name || !email || !phoneNumber || !password) {
       return res
         .status(400)
         .send({ message: "Please fill all required fields" });
     }
-
+ 
     if (!/^\d{10}$/.test(phoneNumber)) {
       return res
         .status(400)
         .send({ message: "Phone number must be 10 digits" });
     }
-
+ 
     const existingDoctor = await Doctor.findOne({
       $or: [{ email }, { phoneNumber }],
     });
@@ -67,12 +68,12 @@ exports.registerDoctor = async (req, res) => {
         .status(409)
         .send({ message: `Doctor with this ${field} already exists` });
     }
-
+ 
     const hashedPassword = await bcrypt.hash(password, 10);
     // const resetCode = generateResetCode();
-
+ 
     const resetCode = await getNanoid();
-
+ 
     const doctor = new Doctor({
       name,
       email,
@@ -92,9 +93,9 @@ exports.registerDoctor = async (req, res) => {
       patients,
       resetCode,
     });
-
+ 
     await doctor.save();
-
+ 
     res.status(201).send({
       message: "Doctor registered successfully",
       resetCode,
@@ -104,7 +105,7 @@ exports.registerDoctor = async (req, res) => {
     res.status(500).send({ message: "Internal server error" });
   }
 };
-
+ 
 // Login a doctor
 exports.loginDoctor = async (req, res) => {
   try {
@@ -113,28 +114,28 @@ exports.loginDoctor = async (req, res) => {
     if (!doctor) {
       return res.status(404).send({ message: "Doctor not found" });
     }
-
+ 
     if (doctor.isBlocked) {
       return res.status(403).send({
         message: "You have been blocked by admin. Please contact admin.",
       });
     }
-
+ 
     if (!doctor.isVerified) {
       return res.status(403).send({
         message: "You need to be verified by the admin before logging in.",
       });
     }
-
+ 
     const isMatch = await bcrypt.compare(password, doctor.password);
     if (!isMatch) {
       return res.status(400).send({ message: "Invalid credentials" });
     }
-
+ 
     const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
-
+ 
     // Set the token in an httpOnly cookie.
     res.cookie("token", token, {
       httpOnly: true,
@@ -142,7 +143,7 @@ exports.loginDoctor = async (req, res) => {
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-
+ 
     res.status(200).send({
       success: true,
       user: {
@@ -157,7 +158,65 @@ exports.loginDoctor = async (req, res) => {
     res.status(400).send({ message: error.message });
   }
 };
-
+ 
+exports.loginDoctorByID = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+ 
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" }); // fixed typo
+    }
+ 
+     if (doctor.isBlocked) {
+      return res.status(403).send({
+        message: "You have been blocked by admin. Please contact admin.",
+      });
+    }
+ 
+    if (!doctor.isVerified) {
+      return res.status(403).send({
+        message: "You need to be verified by the admin before logging in.",
+      });
+    }
+ 
+    const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+ 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+ 
+    res.status(200).send({
+      success: true,
+      user: {
+        name: doctor.name,
+        email: doctor.email,
+        phone: doctor.phoneNumber,
+        role: doctor.role,
+      },
+      message: "Login successful",
+    });
+  } catch (error) {
+    console.error("Error logging in doctor by ID:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+ 
+exports.getAllDoctorsPublic = async (req, res) => {
+  try {
+    const doctors = await Doctor.find().select("name email");
+    res.status(200).json({ doctors });
+  } catch (error) {
+    console.error("Error fetching doctors:", error);
+    res.status(500).json({ message: "Failed to fetch doctors" });
+  }
+};
+ 
 exports.logoutDoctor = async (req, res) => {
   try {
     res.clearCookie("token", {
@@ -170,16 +229,16 @@ exports.logoutDoctor = async (req, res) => {
     res.status(500).send({ message: "Server error during logout" });
   }
 };
-
+ 
 exports.updateDoctor = async (req, res) => {
   try {
     const doctorId = req.doctor._id;
     const doctor = await Doctor.findById(doctorId);
-
+ 
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
-
+ 
     const {
       name,
       phoneNumber,
@@ -189,88 +248,88 @@ exports.updateDoctor = async (req, res) => {
       location,
       hospital,
     } = req.body;
-
+ 
     if (name) doctor.name = name;
-
+ 
     if (phoneNumber) doctor.phoneNumber = phoneNumber;
     if (dob) doctor.dob = dob;
-
+ 
     if (gender) doctor.gender = gender;
     if (specialization) doctor.specialization = specialization;
     if (location) doctor.location = location;
     if (hospital) doctor.hospital = hospital;
-
+ 
     await doctor.save();
-
+ 
     await cache.del(`doctor:${doctorId}`);
-
+ 
     res.status(200).json({ message: "Doctor updated successfully" });
   } catch (error) {
     console.error("Error updating doctor:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
+ 
 // Helper function to generate OTP
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString(); // Generates a 6-digit OTP
 };
-
+ 
 // Reset password
 exports.resetPassword = async (req, res) => {
   try {
     const { email, resetCode, newPassword } = req.body;
-
+ 
     if (!email || !resetCode || !newPassword) {
       return res
         .status(400)
         .send({ message: "Email, reset code, and new password are required." });
     }
-
+ 
     const doctor = await Doctor.findOne({ email });
     if (!doctor) {
       return res.status(404).send({ message: "Doctor not found." });
     }
-
+ 
     if (doctor.resetCode !== resetCode) {
       return res.status(400).send({ message: "Invalid reset code." });
     }
-
+ 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     doctor.password = hashedPassword;
-
+ 
     await doctor.save();
-
+ 
     res.status(200).send({ message: "Password reset successfully." });
   } catch (error) {
     console.error("Error resetting password:", error);
     res.status(500).send({ message: "Internal server error." });
   }
 };
-
+ 
 exports.uploadProfilePicture = async (req, res) => {
   try {
     const doctorId = req.doctor._id;
     const doctor = await Doctor.findById(doctorId);
-
+ 
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
-
+ 
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-
+ 
     // Upload to S3 instead of Cloudinary
     const result = await uploadToS3(req.file, "doctors/profile_pictures");
-
+ 
     // Update the doctor's profile picture URL
     doctor.profilePicture = result.url;
     await doctor.save();
-
+ 
     // Delete the local file after upload
     fs.unlinkSync(req.file.path);
-
+ 
     res.status(200).json({
       message: "Profile picture uploaded successfully",
       profilePicture: doctor.profilePicture,
@@ -284,48 +343,48 @@ exports.uploadProfilePicture = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
+ 
 exports.getProfilePicture = async (req, res) => {
   try {
     const doctorId = req.doctor._id; // ID of the logged-in doctor from authMiddleware
     const doctor = await Doctor.findById(doctorId);
-
+ 
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
-
+ 
     res.status(200).json({ profilePicture: doctor.profilePicture });
   } catch (error) {
     console.error("Error fetching profile picture:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
+ 
 exports.getDoctorDetails = async (req, res) => {
   try {
     const doctorId = req.doctor._id; // ID of the logged-in doctor from authMiddleware
     const cacheKey = `doctor:${doctorId}`;
-
+ 
     const cachedDoctor = await cache.get(cacheKey);
     if (cachedDoctor) {
       return res.status(200).json(cachedDoctor);
     }
-
+ 
     const doctor = await Doctor.findById(doctorId);
-
+ 
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
-
+ 
     await cache.set(cacheKey, doctor, 1800);
-
+ 
     res.status(200).json(doctor);
   } catch (error) {
     console.error("Error fetching doctor details:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
+ 
 exports.requestRegistrationOTP = async (req, res) => {
   try {
     const {
@@ -346,22 +405,22 @@ exports.requestRegistrationOTP = async (req, res) => {
       subscriptionEndDate = null,
       patients = [],
     } = req.body;
-
+ 
     if (!name || !email || !phoneNumber || !password) {
       return res
         .status(400)
         .send({ message: "Please fill all required fields" });
     }
-
+ 
     if (!/^\d{10}$/.test(phoneNumber)) {
       return res
         .status(400)
         .send({ message: "Phone number must be 10 digits" });
     }
-
+ 
     // Check if doctor already exists
     let doctor = await Doctor.findOne({ email });
-
+ 
     if (doctor) {
       return res.status(409).send({
         message: "Doctor with this email already exists.",
@@ -369,7 +428,7 @@ exports.requestRegistrationOTP = async (req, res) => {
     } else {
       // Hash password before saving
       const hashedPassword = await bcrypt.hash(password, 10);
-
+ 
       doctor = new Doctor({
         name,
         email,
@@ -388,7 +447,7 @@ exports.requestRegistrationOTP = async (req, res) => {
         subscriptionEndDate,
         patients,
       });
-
+ 
       await doctor.save();
     }
     // Generate OTP
@@ -416,7 +475,7 @@ exports.requestRegistrationOTP = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "10m" }
     );
-
+ 
     const htmlContent = `
     <html>
     <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
@@ -459,7 +518,7 @@ exports.requestRegistrationOTP = async (req, res) => {
     </body>
     </html>
   `;
-
+ 
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
@@ -467,87 +526,87 @@ exports.requestRegistrationOTP = async (req, res) => {
       text: `Hello ${name},\n\nYour OTP for registration is: ${otp}.\nIt will expire in 10 minutes.\n\nBest,\nYour Team`,
       html: htmlContent,
     };
-
+ 
     // Add OTP email job to queue
     await emailQueue.add("sendEmail", mailOptions);
-
+ 
     res.status(200).send({ message: "OTP sent to email", otpToken });
   } catch (error) {
     console.error("Error sending registration OTP:", error);
     res.status(500).send({ message: "Internal server error" });
   }
 };
-
+ 
 exports.verifyRegistrationOTP = async (req, res) => {
   try {
     const { otpToken, enteredOTP } = req.body;
-
+ 
     // Decode token
     const decoded = jwt.verify(otpToken, process.env.JWT_SECRET);
     if (!decoded || decoded.otp !== enteredOTP) {
       return res.status(400).send({ message: "Invalid or expired OTP" });
     }
-
+ 
     // Find the doctor by email
     const doctor = await Doctor.findOne({ email: decoded.email });
     if (!doctor) {
       return res.status(404).send({ message: "Doctor not found" });
     }
-
+ 
     // Update verification status
     doctor.isVerified.email = true;
     await doctor.save();
-
+ 
     res.status(200).send({ message: "Doctor verified successfully" });
   } catch (error) {
     console.error("Error verifying OTP:", error);
     res.status(500).send({ message: "Internal server error" });
   }
 };
-
+ 
 exports.getVerificationStatus = async (req, res) => {
   try {
     const doctorId = req.doctor._id;
     const doctor = await Doctor.findById(doctorId);
-
+ 
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
-
+ 
     res.status(200).json({ isVerified: doctor.isVerified?.email || false });
   } catch (error) {
     console.error("Error fetching verification status:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
+ 
 exports.requestVerificationOTP = async (req, res) => {
   try {
     const doctorId = req.doctor._id;
     const doctor = await Doctor.findById(doctorId);
-
+ 
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
-
+ 
     if (doctor.isVerified?.email) {
       return res.status(400).json({ message: "Email already verified" });
     }
-
+ 
     // ✅ Generate OTP
     const otp = generateOTP();
-
+ 
     // Save OTP and expiration to doctor document
     doctor.verificationOTP = otp;
     doctor.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
     await doctor.save();
-
+ 
     // ✅ Create JWT Token with OTP (no expiration)
     const otpToken = jwt.sign(
       { otp, email: doctor.email },
       process.env.JWT_SECRET
     );
-
+ 
     // ✅ Generate Email Content with OTP
     const htmlContent = `
     <html>
@@ -591,17 +650,17 @@ exports.requestVerificationOTP = async (req, res) => {
     </body>
     </html>
   `;
-
+ 
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: doctor.email,
       subject: "RadioIQ - Your OTP for Verification",
       html: htmlContent,
     };
-
+ 
     // ✅ Add Email to Queue
     await emailQueue.add("sendEmail", mailOptions);
-
+ 
     return res.status(200).json({
       message: "Verification OTP sent to your email.",
       otpToken,
@@ -611,27 +670,27 @@ exports.requestVerificationOTP = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
+ 
 exports.verifyVerificationOTP = async (req, res) => {
   try {
     // ✅ Get doctorId from the request (attached by middleware)
     const doctorId = req.doctor._id;
-
+ 
     // ✅ Validate doctorId
     if (!doctorId) {
       return res
         .status(401)
         .json({ message: "Unauthorized access. Doctor ID not found." });
     }
-
+ 
     // ✅ Get OTP and token from request body
     const { otpToken, enteredOTP } = req.body;
-
+ 
     // ✅ Validate input
     if (!otpToken || !enteredOTP) {
       return res.status(400).json({ message: "OTP and token are required." });
     }
-
+ 
     // ✅ Decode and verify JWT token (ignore expiration)
     let decoded;
     try {
@@ -641,36 +700,36 @@ exports.verifyVerificationOTP = async (req, res) => {
     } catch (error) {
       return res.status(400).json({ message: "Invalid or expired OTP token." });
     }
-
+ 
     // ✅ Find doctor by ID
     const doctor = await Doctor.findById(doctorId);
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found." });
     }
-
+ 
     // ✅ Check if email is already verified
     if (doctor.isVerified?.email) {
       return res.status(400).json({ message: "Email already verified." });
     }
-
+ 
     // ✅ Check OTP expiration
     if (!doctor.otpExpiresAt || doctor.otpExpiresAt < new Date()) {
       return res
         .status(400)
         .json({ message: "OTP has expired. Please request a new one." });
     }
-
+ 
     // ✅ Validate OTP
     if (doctor.verificationOTP !== enteredOTP) {
       return res.status(400).json({ message: "Invalid OTP." });
     }
-
+ 
     // ✅ Mark email as verified
     doctor.isVerified.email = true;
     doctor.verificationOTP = undefined; // Clear OTP after verification
     doctor.otpExpiresAt = undefined; // Clear expiration time
     await doctor.save();
-
+ 
     // ✅ Return success response
     res.status(200).json({ message: "Email verified successfully." });
   } catch (error) {

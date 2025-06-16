@@ -7,12 +7,12 @@ import { toast } from "react-toastify";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { PhotoIcon, UserCircleIcon } from "@heroicons/react/24/solid";
 import { ChevronDownIcon } from "@heroicons/react/16/solid";
-
+ 
 const UpdateProfile = () => {
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
   const token = auth?.token;
-
+ 
   // Initialize formData with auth.user values
   const [formData, setFormData] = useState({
     name: auth.user?.name || "",
@@ -27,7 +27,7 @@ const UpdateProfile = () => {
   const [preview, setPreview] = useState(
     auth?.profilePicture || "https://via.placeholder.com/150"
   );
-
+ 
   useEffect(() => {
     if (token) {
       const fetchDoctorDetails = async () => {
@@ -55,12 +55,12 @@ const UpdateProfile = () => {
       fetchDoctorDetails();
     }
   }, [token]);
-
+ 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
+ 
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -68,7 +68,7 @@ const UpdateProfile = () => {
       setPreview(URL.createObjectURL(file));
     }
   };
-
+ 
   const handleProfilePicUpload = async () => {
     if (!profilePic) {
       alert("Please select a profile picture to upload.");
@@ -95,7 +95,7 @@ const UpdateProfile = () => {
       alert("Failed to upload profile picture.");
     }
   };
-
+ 
   const handleDetailsUpdate = async (e) => {
     e.preventDefault();
     try {
@@ -118,19 +118,18 @@ const UpdateProfile = () => {
       alert("Failed to update profile details.");
     }
   };
-
+ 
   console.log("Doctor dob", auth.user?.dob);
   console.log("Phone number", auth.user?.phoneNumber);
-
+ 
   return (
-    <>
       <div className="w-full h-full bg-[#030811] dark:bg-[#fdfdfd] py-8 px-4">
         <form
           onSubmit={handleDetailsUpdate}
           className="space-y-12 max-w-4xl mx-auto bg-white dark:bg-[#fdfdfd] p-8 rounded-lg "
         >
           {/* Profile Section */}
-          <div className="grid grid-cols-1 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
+          {/* <div className="grid grid-cols-1 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-[#030811]">
                 Profile
@@ -176,7 +175,7 @@ const UpdateProfile = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
           {/* Personal Information Section */}
           <div className="grid grid-cols-1 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
             <div>
@@ -363,8 +362,7 @@ const UpdateProfile = () => {
           </div>
         </form>
       </div>
-    </>
   );
 };
-
+ 
 export default UpdateProfile;

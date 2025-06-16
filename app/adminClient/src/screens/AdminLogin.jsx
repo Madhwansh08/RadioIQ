@@ -2,17 +2,17 @@ import React, { useState, useRef } from "react";
 import axios from "axios";
 import config from "../utils/config";
 import { toast } from "react-toastify";
-
+import { motion } from "framer-motion";
+ 
 export default function AdminLogin({ setIsAuthenticated, fetchDoctors }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mfaToken, setMfaToken] = useState(Array(6).fill("")); // 6 digits
+  const [mfaToken, setMfaToken] = useState(Array(6).fill(""));
   const inputRefs = useRef([]);
   const [adminId, setAdminId] = useState(null);
-  const [step, setStep] = useState(1); // 1 = credentials, 2 = MFA
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-
-  // Step 1: Submit email/password
+ 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -22,14 +22,12 @@ export default function AdminLogin({ setIsAuthenticated, fetchDoctors }) {
         { email, password },
         { withCredentials: true }
       );
-
-      // MFA required
+ 
       if (res.data.mfaRequired) {
         setAdminId(res.data.adminId);
-        setStep(2); // show MFA input
+        setStep(2);
         toast.info("MFA required: Enter your 6-digit code");
       } else {
-        // fallback (if MFA not required — should rarely happen)
         handleSuccess(res);
       }
     } catch (error) {
@@ -38,8 +36,7 @@ export default function AdminLogin({ setIsAuthenticated, fetchDoctors }) {
       setLoading(false);
     }
   };
-
-  // Step 2: Submit MFA token
+ 
   const handleMfaVerification = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -56,76 +53,85 @@ export default function AdminLogin({ setIsAuthenticated, fetchDoctors }) {
       setLoading(false);
     }
   };
-
-  // Final success handler
+ 
   const handleSuccess = (res) => {
+    const token = res.data.token;
+    if (token) {
+      sessionStorage.setItem("adminToken", token);
+    }
     toast.success(res.data.message || "Login successful");
     sessionStorage.setItem("isAuthenticated", "true");
     setIsAuthenticated(true);
     fetchDoctors();
   };
-
+ 
   const handleOtpChange = (value, index) => {
     if (/^\d$/.test(value) || value === "") {
       const updatedOtp = [...mfaToken];
       updatedOtp[index] = value;
       setMfaToken(updatedOtp);
-
-      if (value && index < 5) {
-        inputRefs.current[index + 1].focus();
-      }
+      if (value && index < 5) inputRefs.current[index + 1].focus();
     }
   };
-
+ 
   const handleOtpKeyDown = (e, index) => {
-    if (e.key === "Backspace" && mfaToken[index] === "") {
-      if (index > 0) {
-        inputRefs.current[index - 1].focus();
-      }
+    if (e.key === "Backspace" && mfaToken[index] === "" && index > 0) {
+      inputRefs.current[index - 1].focus();
     }
   };
-
+ 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <form
-        onSubmit={step === 1 ? handleLogin : handleMfaVerification}
-        className="bg-white p-12 rounded-3xl w-[600px] h-auto"
+    <div className="flex flex-col items-center justify-center min-h-screen w-[100%] bg-[#fdfdfd] px-4">
+      <motion.div
+        className="text-center text-6xl w-full mb-24 font-bold text-[#5c60c6] mb-2"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
       >
-        <h2 className="text-4xl font-bold mb-8 text-center text-[#5c60c6]">
-          Admin Login
-        </h2>
-
+        Welcome to <span className="text-[#030811]">RadioIQ Admin Panel</span>
+      </motion.div>
+      <motion.form
+        onSubmit={step === 1 ? handleLogin : handleMfaVerification}
+        className="bg-white p-12 rounded-3xl shadow-lg w-full max-w-lg"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="text-center text-3xl  font-semibold text-black mb-10">
+          Login Form
+        </div>
+ 
         {step === 1 && (
           <>
-            <div className="mb-4">
-              <label className="block mb-1">Email</label>
+            <div className="mb-6">
+              <label className="block mb-2 font-medium">Email</label>
               <input
                 type="email"
-                className="w-full px-3 py-2 border rounded"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border rounded-md bg-gray-50 dark:bg-[#1f1f3a] text-gray-900 dark:text-white"
                 required
               />
             </div>
-            <div className="mb-6">
-              <label className="block mb-1">Password</label>
+            <div className="mb-8">
+              <label className="block mb-2 font-medium">Password</label>
               <input
                 type="password"
-                className="w-full px-3 py-2 border rounded"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border rounded-md bg-gray-50 dark:bg-[#1f1f3a] text-gray-900 dark:text-white"
                 required
               />
             </div>
           </>
         )}
-
+ 
         {step === 2 && (
-          <div className="mb-6">
-            <label className="block mb-3 text-center text-lg font-medium">
+          <div className="mb-8">
+            <label className="block mb-4 text-center text-lg font-medium dark:text-white">
               Enter 6-digit MFA Token
             </label>
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-3">
               {mfaToken.map((digit, index) => (
                 <input
                   key={index}
@@ -135,25 +141,28 @@ export default function AdminLogin({ setIsAuthenticated, fetchDoctors }) {
                   onChange={(e) => handleOtpChange(e.target.value, index)}
                   onKeyDown={(e) => handleOtpKeyDown(e, index)}
                   ref={(el) => (inputRefs.current[index] = el)}
-                  className="w-12 h-12 text-center text-lg border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-12 h-12 text-center text-xl border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-[#1f1f3a] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#5c60c6]"
                 />
               ))}
             </div>
           </div>
         )}
-
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-          disabled={loading}
+          className="w-full group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md bg-[#5c60c6] px-6 font-medium text-white transition hover:shadow-[0_4px_15px_#5c60c6]"
         >
-          {loading
-            ? "Please wait..."
-            : step === 1
-            ? "Login"
-            : "Verify MFA Token"}
+          <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-[1.5s] group-hover:[transform:skew(-12deg)_translateX(100%)]">
+            <div className="relative h-full w-8 bg-white/20"></div>
+          </div>
+          <span className="mr-4 text-xl">
+            {loading
+              ? "Please wait..."
+              : step === 1
+              ? "Login"
+              : "Verify MFA Token"}
+          </span>
         </button>
-      </form>
+      </motion.form>
     </div>
   );
 }
