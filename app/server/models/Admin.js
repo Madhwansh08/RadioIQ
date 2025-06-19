@@ -19,6 +19,11 @@ const adminSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    tokens: {
+      type: Number,
+      required: true,
+      default: 10000,
+    },
     role: {
       type: String,
       default: "Admin",

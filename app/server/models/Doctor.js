@@ -76,15 +76,11 @@ const doctorSchema = new mongoose.Schema(
       enum: ["Subscribed", "Not Subscribed"],
       default: "Not Subscribed",
     },
-    // Subscription start date
-    subscriptionStartDate: {
-      type: Date,
+    tokens: {
+      type: Number,
+      required: true,
+      default: 0,
     },
-    // Subscription end date
-    subscriptionEndDate: {
-      type: Date,
-    },
-
     patients: [
       {
         type: mongoose.Schema.Types.ObjectId,

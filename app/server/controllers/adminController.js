@@ -187,7 +187,6 @@ exports.verifyMfa = async (req, res) => {
 };
  
  
- 
 exports.addDoctor = async (req, res) => {
   try {
     const {
@@ -372,5 +371,112 @@ exports.deleteDoctorById = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+exports.assignTokensToDoctor = async (req, res) => {
+  try {
+    const doctorId = req.params.doctorId; 
+    const { tokens } = req.body;
+    console.log("Assigning tokens to doctor:", doctorId, tokens);
+    if (!doctorId || !tokens) {
+      return res.status(400).send({ message: "Doctor ID and tokens are required" });
+    }
+
+    if (typeof tokens !== "number" || tokens <= 0) {
+      return res.status(400).send({ message: "Tokens must be a positive number" });
+    }
+
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).send({ message: "Doctor not found" });
+    }
+    console.log("Doctor found:", doctor);
+    const admin = await Admin.findOne();
+    if (!admin) {
+      return res.status(500).send({ message: "Admin not found" });
+    }
+    console.log("Admin found:", admin);
+    if (admin.tokens < tokens) {
+      return res.status(400).send({ message: "Insufficient tokens in admin account" });
+    }
+
+    doctor.tokens += tokens;
+    admin.tokens -= tokens;
+
+    await doctor.save();
+    await admin.save();
+
+    res.status(200).send({
+      message: `Successfully assigned ${tokens} tokens to doctor ${doctor.name}`,
+      doctorTokens: doctor.tokens,
+      adminTokens: admin.tokens
+    });
+  } catch (error) {
+    console.error("Error assigning tokens:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+exports.removeTokensFromDoctor = async (req, res) => {
+  try {
+    const doctorId = req.params.doctorId;
+    const { tokens } = req.body;
+
+    if (!doctorId || !tokens) {
+      return res.status(400).send({ message: "Doctor ID and tokens are required" });
+    }
+
+    if (typeof tokens !== "number" || tokens <= 0) {
+      return res.status(400).send({ message: "Tokens must be a positive number" });
+    }
+
+    // Fetch the doctor
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).send({ message: "Doctor not found" });
+    }
+
+    if (doctor.tokens < tokens) {
+      return res.status(400).send({ message: "Doctor does not have enough tokens to remove" });
+    }
+
+    const admin = await Admin.findOne();
+    if (!admin) {
+      return res.status(500).send({ message: "Admin not found" });
+    }
+
+    doctor.tokens -= tokens;
+    admin.tokens += tokens;
+
+    await doctor.save();
+    await admin.save();
+
+    res.status(200).send({
+      message: `Successfully removed ${tokens} tokens from doctor ${doctor.name}`,
+      doctorTokens: doctor.tokens,
+      adminTokens: admin.tokens
+    });
+  } catch (error) {
+    console.error("Error removing tokens:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+exports.getAdminTokens = async (req, res) => {
+  try {
+    const admin = await Admin.findOne();
+    if (!admin) {
+      return res.status(404).send({ message: "Admin not found" });
+    }
+
+    res.status(200).send({
+      tokens: admin.tokens,
+      message: "Admin tokens retrieved successfully"
+    });
+  } catch (error) {
+    console.error("Error fetching admin tokens:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+}
+
  
  

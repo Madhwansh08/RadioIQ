@@ -16,7 +16,7 @@ const Dashboard = () => {
   const [patientCount, setPatientCount] = useState(0);
   const [xrayCount, setXrayCount] = useState(0);
   const [commonAbnormalities, setCommonAbnormalities] = useState([]);
-  const [xrayByDays, setXrayByDays] = useState([]); 
+  const [xrayByDays, setXrayByDays] = useState([]);
   const [abnormalityGenderCount, setAbnormalityGenderCount] = useState([]);
   const [abnoramlityAgeCount, setAbnormalityAgeCount] = useState([]);
   const [abnormalityLocationCount, setAbnormalityLocationCount] = useState([]);
@@ -31,7 +31,7 @@ const Dashboard = () => {
 
   // Toggle state for displaying ChartFive or ChartEight
   const [showChartFive, setShowChartFive] = useState(true);
-  const [heatmapLink , setHeatmapLink] = useState("");
+  const [heatmapLink, setHeatmapLink] = useState("");
 
   // Fetch all patients
   useEffect(() => {
@@ -224,7 +224,6 @@ const Dashboard = () => {
     fetchTbScores();
   }, [auth.token]);
 
-
   useEffect(() => {
     if (!showChartFive) {
       // Only call the API if we haven't fetched it yet (optional check)
@@ -244,9 +243,6 @@ const Dashboard = () => {
       }
     }
   }, [showChartFive, heatmapLink, auth.token]);
-
-
-
 
   return (
     <div>
@@ -279,14 +275,14 @@ const Dashboard = () => {
 
         {/* Toggle for ChartFive / ChartEight */}
         <div className="w-full shadow-[#030811] drop-shadow-sm">
-          <div className="mb-4 flex justify-end">
+          {/* <div className="mb-4 flex justify-end">
             <button
               onClick={() => setShowChartFive((prev) => !prev)}
               className="bg-[#030811] hover:bg-[#5c60c6] text-white px-4 py-2 rounded-full"
             >
               {showChartFive ? "Switch to Map View" : "Switch to Basic"}
             </button>
-          </div>
+          </div> */}
 
           {showChartFive ? (
             <ChartFive abnormalityLocationCount={abnormalityLocationCount} />

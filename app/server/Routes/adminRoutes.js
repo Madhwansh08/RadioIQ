@@ -61,4 +61,25 @@ router.get("/adminExists", async (req, res) => {
   res.send({ exists: !!admin });
 });
 
+router.post(
+  "/assignTokens/:doctorId",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.assignTokensToDoctor
+);
+
+router.post(
+  "/removeTokens/:doctorId",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.removeTokensFromDoctor
+);
+
+router.get(
+  "/adminTokens",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.getAdminTokens
+);
+
 module.exports = router;
