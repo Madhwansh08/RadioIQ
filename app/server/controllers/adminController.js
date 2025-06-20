@@ -377,6 +377,7 @@ exports.assignTokensToDoctor = async (req, res) => {
   try {
     const doctorId = req.params.doctorId; 
     const { tier } = req.body;
+    
     console.log("Assigning tokens to doctor:", doctorId, tier);
     if (!doctorId || !tier) {
       return res.status(400).send({ message: "Doctor ID and tier are required" });
@@ -418,7 +419,7 @@ exports.assignTokensToDoctor = async (req, res) => {
     await admin.save();
 
     res.status(200).send({
-      message: `Successfully assigned ${tokens} tokens to doctor ${doctor.name}`,
+      message: `Successfully assigned tokens to doctor ${doctor.name}`,
       doctorTokens: doctor.tokens,
       adminTokens: admin.tokens
     });
@@ -490,7 +491,6 @@ exports.getAdminTokens = async (req, res) => {
   }
 }
 
-
 exports.initiateAdminTokenMFA = async (req, res) => {
   try {
     const admin = await Admin.findOne();
@@ -509,13 +509,12 @@ exports.initiateAdminTokenMFA = async (req, res) => {
         secret: secrets[i],
         label: `RadioIQ Tier Token ${i + 1}`,
         issuer: "RadioIQ",
-      })
-      
+        encoding: "base32",
+      });
+      console.log(`Secret for QR ${i + 1}:`, secrets[i]);
       const qrCodeURL = await qrcode.toDataURL(otpauthurl);
       qrCodes.push(qrCodeURL);
     }
-
-  
 
     res.status(200).send({
       message: "Tier-based MFA QR codes generated successfully",
@@ -525,7 +524,107 @@ exports.initiateAdminTokenMFA = async (req, res) => {
     console.error("Error initiating MFA tokens:", error);
     res.status(500).json({ message: "Internal server error" });
   }
-}
+};
+
+exports.verifySingleAdminTokenMFA = async (req, res) => {
+  try {
+    const { token, index } = req.body;
+
+    if (!token || typeof index !== "number" || index < 0 || index > 4) {
+      return res
+        .status(400)
+        .json({ message: "Token and valid index (0–4) are required." });
+    }
+
+    const admin = await Admin.findOne();
+    if (!admin || !admin.mfaSecretToken || admin.mfaSecretToken.length !== 5) {
+      return res
+        .status(500)
+        .json({ message: "MFA secrets not properly configured." });
+    }
+
+    const delta = speakeasy.totp.verifyDelta({
+      secret: admin.mfaSecretToken[index],
+      encoding: "base32",
+      token,
+      window: 2, // ±60s
+    });
+
+    console.log("Token:", token);
+    console.log("Delta result:", delta);
+
+    if (!delta) {
+      return res
+        .status(401)
+        .json({ message: `Token for Tier ${index + 1} is invalid.` });
+    }
+
+    return res
+      .status(200)
+      .json({ message: `Token for Tier ${index + 1} verified.` });
+  } catch (err) {
+    console.error("Single MFA token verification failed:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
 
  
+
+exports.generatePaymentToken = async (req, res) => {
+  try {
+    const admin = await Admin.findOne();
+    console.log("Admin found:", admin);
+
+    const secret = speakeasy.generateSecret({
+      name: `RadioIQ (${email})`,
+    });
+
+    res.status(200).send({
+      message: "Scan the QR to setup MFA and initiate payment",
+      tempData: {
+        mfaAdminPayment: secret.base32,
+      },
+      qrCodeURL,
+    });
+    await admin.save();
+
+    res.status(201).send({
+      message: "Payment Initiated successfully",
+    });
+  } catch (error) {
+    console.error("Error initiating payment:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+}
+
+
+exports.verifyPaymentToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    const admin = await Admin.findOne();
+    if (!admin || !admin.mfaAdminPayment) {
+      return res.status(403).send({ message: "MFA not configured" });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: admin.mfaAdminPayment,
+      encoding: "base32",
+      token,
+      window: 1,
+    });
+
+    if (!verified) {
+      return res.status(401).send({ message: "Invalid or expired payment token" });
+    }
+
+    res.status(200).send({
+      message: "Payment verified successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Payment verification error:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
  

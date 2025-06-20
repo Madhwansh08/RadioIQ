@@ -82,4 +82,20 @@ router.get(
   AdminController.getAdminTokens
 );
 
+
+router.post(
+  "/initiateAdminTokenMFA",
+  // adminAuthMiddleware,
+  // isAdmin,
+  AdminController.initiateAdminTokenMFA
+);
+
+router.post(
+  "/verifySingleAdminMFAToken",
+  // adminAuthMiddleware,
+  // isAdmin,
+  AdminController.verifySingleAdminTokenMFA
+);
+
+
 module.exports = router;

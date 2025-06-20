@@ -19,6 +19,7 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [docEmail, setDocEmail] = useState("");
   const [docPassword, setDocPassword] = useState("");
+  const [tier, setTier] = useState(0);
 
   const fetchAdminTokens = async () => {
     try {
@@ -114,12 +115,12 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
     }
   };
 
-  const assignTokens = async (id, tokens) => {
-    console.log("Assigning tokens:", id, tokens);
+  const assignTokens = async (id, tier) => {
+    console.log("Assigning tokens:", id, tier);
     try {
       await axios.post(
         `${config.API_URL}/admin/assignTokens/${id}`,
-        { tokens },
+        { tier },
         authHeader()
       );
       toast.success("Tokens assigned successfully");
@@ -373,14 +374,20 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
           animate={{ opacity: 1 }}
         >
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add Tokens</h2>
-            <input
-              type="number"
+            <h2 className="text-xl font-bold mb-4">Assign Tokens by Tier</h2>
+
+            {/* Tier Dropdown */}
+            <select
               className="w-full px-3 py-2 border rounded mb-4"
-              placeholder="Enter tokens to assign"
-              onChange={(e) => setTokens(e.target.value)}
-              value={tokens}
-            />
+              value={tier}
+              onChange={(e) => setTier(e.target.value)}
+            >
+              <option value={0}>Select Tier</option>
+              <option value={1}>Tier 1 — 1000 tokens</option>
+              <option value={2}>Tier 2 — 2000 tokens</option>
+              <option value={3}>Tier 3 — 3000 tokens</option>
+            </select>
+
             <div className="flex justify-end space-x-2">
               <button
                 className="bg-gray-400 text-white px-4 py-2 rounded"
@@ -391,11 +398,12 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
               <button
                 className="bg-[#5c60c6] text-white px-4 py-2 rounded hover:bg-red-700"
                 onClick={async () => {
-                  if (!tokens || isNaN(tokens) || Number(tokens) <= 0) {
-                    toast.error("Please enter a valid positive token number");
+                  if (!tier) {
+                    toast.error("Please select a tier to assign tokens");
                     return;
                   }
-                  await assignTokens(doctor, Number(tokens));
+
+                  await assignTokens(doctor, Number(tier)); // Only send tier
                   setShowAssignTokensModal(false);
                   setDoctor(null);
                 }}
@@ -431,6 +439,16 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
               <button
                 className="bg-[#5c60c6] text-white px-4 py-2 rounded hover:bg-red-700"
                 onClick={async () => {
+                  if (!doctor) {
+                    toast.error("Doctor is not selected");
+                    return;
+                  }
+
+                  if (!tokens || isNaN(tokens) || Number(tokens) <= 0) {
+                    toast.error("Enter a valid token amount");
+                    return;
+                  }
+
                   await removeTokens(doctor, Number(tokens));
                   setShowRemoveTokensModal(false);
                   setDoctor(null);
