@@ -490,5 +490,35 @@ exports.getAdminTokens = async (req, res) => {
   }
 }
 
+exports.initiateAdminTokenMFA = async (req, res) => {
+  try {
+    const admin = Admin.findOne();
+    console.log("Admin found:", admin);
+
+    const secrets = [];
+    const qrCodes = [];
+
+    for (let i = 0; i < 5; i++) {
+      const secret = speakeasy.generateSecret({
+        name: `RadioIQ Admin Token MFA ${i + 1}`
+      });
+      secrets.push(secret.base32);
+      const qrCodeURL = await qrcode.toDataURL(secret.otpauth_url);
+      qrCodes.push(qrCodeURL);
+    }
+
+    admin.mfaSecretToken = secrets;
+    await admin.save();
+
+    res.status(200).send({
+      message: "MFA setup for admin tokens initiated successfully",
+      qrCodes,
+    });
+  } catch (error) {
+    console.error("Error initiating MFA tokens:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
  
  
