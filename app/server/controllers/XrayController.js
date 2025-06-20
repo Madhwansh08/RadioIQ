@@ -310,7 +310,6 @@ async function processDicomFile(file, doctorId, clientId, index, totalFiles) {
   }
 }
 
-// Export the processDicomFile function correctly.
 exports.processDicomFile = processDicomFile;
 
 // The remainder of your code remains unchanged (uploadMultipleDicomXray, etc.)

@@ -41,6 +41,10 @@ const adminSchema = new mongoose.Schema(
        type: Boolean, 
        default: false 
     },
+    mfaSecretToken: {
+      type: [String],
+      default: [null, null, null, null, null],
+    },
   },
   {
     timestamps: true,

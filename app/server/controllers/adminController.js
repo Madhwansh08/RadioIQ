@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
+const { TimeSeriesAggregationType } = require("redis");
  
 async function getNanoid() {
   const { customAlphabet } = await import("nanoid");
@@ -375,14 +376,25 @@ exports.deleteDoctorById = async (req, res) => {
 exports.assignTokensToDoctor = async (req, res) => {
   try {
     const doctorId = req.params.doctorId; 
-    const { tokens } = req.body;
-    console.log("Assigning tokens to doctor:", doctorId, tokens);
-    if (!doctorId || !tokens) {
-      return res.status(400).send({ message: "Doctor ID and tokens are required" });
+    const { tier } = req.body;
+    console.log("Assigning tokens to doctor:", doctorId, tier);
+    if (!doctorId || !tier) {
+      return res.status(400).send({ message: "Doctor ID and tier are required" });
     }
 
-    if (typeof tokens !== "number" || tokens <= 0) {
-      return res.status(400).send({ message: "Tokens must be a positive number" });
+    let tokensToBeAssigned;
+    switch (tier) {
+      case 1:
+        tokensToBeAssigned = 1000;
+        break;
+      case 2:
+        tokensToBeAssigned = 2000;
+        break;
+      case 3:   
+        tokensToBeAssigned = 3000;
+        break;
+      default:
+        return res.status(400).send({ message: "Invalid tier selected" });
     }
 
     const doctor = await Doctor.findById(doctorId);
@@ -395,12 +407,12 @@ exports.assignTokensToDoctor = async (req, res) => {
       return res.status(500).send({ message: "Admin not found" });
     }
     console.log("Admin found:", admin);
-    if (admin.tokens < tokens) {
+    if (admin.tokens < tokensToBeAssigned) {
       return res.status(400).send({ message: "Insufficient tokens in admin account" });
     }
 
-    doctor.tokens += tokens;
-    admin.tokens -= tokens;
+    doctor.tokens += tokensToBeAssigned;
+    admin.tokens -= tokensToBeAssigned;
 
     await doctor.save();
     await admin.save();
