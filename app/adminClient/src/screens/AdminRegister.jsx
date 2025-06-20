@@ -1,25 +1,77 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import config from "../utils/config";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
- 
+
 const AdminRegister = ({ onRegisterSuccess }) => {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
   const [tempData, setTempData] = useState(null);
   const [qrCodeURL, setQrCodeURL] = useState("");
   const [mfaToken, setMfaToken] = useState(Array(6).fill(""));
   const inputRefs = useRef([]);
   const [message, setMessage] = useState("");
- 
+  
+  const [qrCode, setQrCode] = useState("");
+  const [token, setToken] = useState("");
+  const [error, setError] = useState("");
+  const [verified, setVerified] = useState(false);
+
+  useEffect(() => {
+    const fetchQRCode = async () => {
+      try {
+        const res = await axios.post(`${config.API_URL}/admin/initiateAdminMFA`);
+        setQrCode(res.data.qrCodeURL);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load QR code.");
+      }
+    };
+
+    fetchQRCode();
+  }, []);
+
+  const handleVerify = async () => {
+    if (!/^\d{6}$/.test(token)) {
+      setError("Please enter a valid 6-digit token.");
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${config.API_URL}/admin/verifyAdminMFA`, {
+        token,
+      });
+
+      if (res.data.success) {
+        setVerified(true);
+        setError("");
+      } else {
+        setError("Invalid or expired token.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Verification failed.");
+    }
+  };
+
+
+
+
   const handleInputChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
- 
+
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${config.API_URL}/admin/adminInitRegister`, formData);
+      const res = await axios.post(
+        `${config.API_URL}/admin/adminInitRegister`,
+        formData
+      );
       setQrCodeURL(res.data.qrCodeURL);
       setTempData(res.data.tempData);
       setStep(2);
@@ -27,21 +79,24 @@ const AdminRegister = ({ onRegisterSuccess }) => {
       setMessage(err.response?.data?.message || "Registration failed");
     }
   };
- 
+
   const handleMfaVerification = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${config.API_URL}/admin/adminCompleteRegister`, {
-        ...tempData,
-        token: mfaToken.join(""),
-      });
+      const res = await axios.post(
+        `${config.API_URL}/admin/adminCompleteRegister`,
+        {
+          ...tempData,
+          token: mfaToken.join(""),
+        }
+      );
       toast.success("Admin registered successfully!");
-      if (onRegisterSuccess) onRegisterSuccess();
+      setStep(3);
     } catch (err) {
       setMessage(err.response?.data?.message || "MFA verification failed");
     }
   };
- 
+
   const handleOtpChange = (value, index) => {
     if (/^\d$/.test(value) || value === "") {
       const updatedOtp = [...mfaToken];
@@ -50,13 +105,13 @@ const AdminRegister = ({ onRegisterSuccess }) => {
       if (value && index < 5) inputRefs.current[index + 1].focus();
     }
   };
- 
+
   const handleOtpKeyDown = (e, index) => {
     if (e.key === "Backspace" && mfaToken[index] === "" && index > 0) {
       inputRefs.current[index - 1].focus();
     }
   };
- 
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full bg-[#fdfdfd] px-4">
       <motion.div
@@ -67,7 +122,7 @@ const AdminRegister = ({ onRegisterSuccess }) => {
       >
         Welcome to <span className="text-[#030811]">RadioIQ Admin Panel</span>
       </motion.div>
- 
+
       <motion.div
         className="bg-white p-10 rounded-3xl shadow-lg w-full max-w-xl"
         initial={{ opacity: 0, y: -20 }}
@@ -77,11 +132,11 @@ const AdminRegister = ({ onRegisterSuccess }) => {
         <h2 className="text-center text-3xl font-semibold text-[#030811] mb-6">
           Admin Registration
         </h2>
- 
+
         {message && (
           <p className="text-center text-red-500 font-medium mb-4">{message}</p>
         )}
- 
+
         {step === 1 && (
           <form onSubmit={handleRegister} className="space-y-5">
             <input
@@ -119,7 +174,7 @@ const AdminRegister = ({ onRegisterSuccess }) => {
             </button>
           </form>
         )}
- 
+
         {step === 2 && (
           <div className="space-y-6">
             <p className="text-center font-medium text-[#5c60c6]">
@@ -155,10 +210,45 @@ const AdminRegister = ({ onRegisterSuccess }) => {
             </form>
           </div>
         )}
+
+        {step === 3 && (
+          <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
+            <h2 className="text-xl font-bold text-center mb-4">
+              Scan Payment QR Code
+            </h2>
+
+            {qrCode ? (
+              <img
+                src={qrCode}
+                alt="QR Code"
+                className="mx-auto w-64 h-64 mb-4"
+              />
+            ) : (
+              <p className="text-center text-gray-500">Loading QR code...</p>
+            )}
+
+            <input
+              type="text"
+              placeholder="Enter 6-digit code"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              maxLength={6}
+              className="w-full px-4 py-2 border rounded text-center text-lg mb-2"
+            />
+
+            {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+
+            <button
+              onClick={handleVerify}
+              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            >
+              Verify
+            </button>
+          </div>
+        )}
       </motion.div>
     </div>
   );
 };
- 
+
 export default AdminRegister;
- 

@@ -573,11 +573,19 @@ exports.verifySingleAdminTokenMFA = async (req, res) => {
 exports.generatePaymentToken = async (req, res) => {
   try {
     const admin = await Admin.findOne();
-    console.log("Admin found:", admin);
+    if (!admin) return res.status(404).send({ message: "Admin not found" });
+
+    const email = admin.email;
 
     const secret = speakeasy.generateSecret({
-      name: `RadioIQ (${email})`,
+      name: `RadioIQ PMFA (${email})`,
     });
+
+    const qrCodeURL = await qrcode.toDataURL(secret.otpauth_url);
+
+    // Save secret to admin model (optional)
+    admin.mfaAdminPayment = secret.base32;
+    await admin.save();
 
     res.status(200).send({
       message: "Scan the QR to setup MFA and initiate payment",
@@ -586,17 +594,11 @@ exports.generatePaymentToken = async (req, res) => {
       },
       qrCodeURL,
     });
-    await admin.save();
-
-    res.status(201).send({
-      message: "Payment Initiated successfully",
-    });
   } catch (error) {
     console.error("Error initiating payment:", error);
     res.status(500).send({ message: "Internal server error" });
   }
-}
-
+};
 
 exports.verifyPaymentToken = async (req, res) => {
   try {
@@ -615,7 +617,9 @@ exports.verifyPaymentToken = async (req, res) => {
     });
 
     if (!verified) {
-      return res.status(401).send({ message: "Invalid or expired payment token" });
+      return res
+        .status(401)
+        .send({ message: "Invalid or expired payment token" });
     }
 
     res.status(200).send({

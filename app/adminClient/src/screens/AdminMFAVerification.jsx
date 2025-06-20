@@ -13,7 +13,7 @@ const AdminMFAStepper = () => {
     const fetchQRCodes = async () => {
       try {
         const res = await axios.post(
-          "http://localhost:7000/admin/initiateAdminTokenMFA"
+          `${config.API_URL}/admin/initiateAdminTokenMFA`,
         );
         setQrCodes(res.data.qrCodes);
       } catch (err) {
@@ -33,7 +33,7 @@ const AdminMFAStepper = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:7000/admin/verifySingleAdminMFAToken",
+        `${config.API_URL}/admin/verifySingleAdminMFAToken`,
         {
           token: currentToken,
           index: currentIndex,

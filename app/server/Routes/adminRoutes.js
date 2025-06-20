@@ -97,5 +97,8 @@ router.post(
   AdminController.verifySingleAdminTokenMFA
 );
 
+router.post("/initiateAdminMFA", AdminController.generatePaymentToken);
+
+router.post("/verifyAdminMFA", AdminController.verifyPaymentToken);
 
 module.exports = router;

@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import AdminScreen from "./screens/AdminScreen";
 import "react-toastify/dist/ReactToastify.css";
 import AdminMFAVerification from "./screens/AdminMFAVerification";
+import AdminPaymentMFA from "./screens/AdminPaymentMFA";
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<AdminScreen />} />
         <Route path="/admin5qr" element={<AdminMFAVerification />} />
+        <Route path="/admin-payment" element={<AdminPaymentMFA />} />
       </Routes>
     </div>
   );
