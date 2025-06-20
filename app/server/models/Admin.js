@@ -37,13 +37,19 @@ const adminSchema = new mongoose.Schema(
       default: true,
     },
     mfaSecret: { type: String },
-    mfaEnabled: { 
-       type: Boolean, 
-       default: false 
+    mfaEnabled: {
+      type: Boolean,
+      default: false,
     },
     mfaSecretToken: {
       type: [String],
-      default: [null, null, null, null, null],
+      default: [
+        OV2UMLSKGEXUEIZKHZKUKRZTNRISCJJSENTE6ZRDJMXGE5SWHNZQ,
+        JFQUUUTZJFXFCVZ4HNVTWL2EPBFCY2KLEYXTQU3HNBGTAUZEIIQQ,
+        LV4WMVSJM5TEMPBYLI3HEPTJJR5U4KCULNKGMZDOFZNXIVSIMM4A,
+        KQRTOSD2LBOT4TLTHRQWW5SFMFTXK6BKOFBFONCJJJSTA2BQKRIQ,
+        IUTGQN3MPIQT6WB4NMUTEULQJETGQTD3IBNHCVCWLZXDUUCHHFFA,
+      ],
     },
   },
   {

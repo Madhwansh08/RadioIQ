@@ -490,28 +490,35 @@ exports.getAdminTokens = async (req, res) => {
   }
 }
 
+
 exports.initiateAdminTokenMFA = async (req, res) => {
   try {
-    const admin = Admin.findOne();
+    const admin = await Admin.findOne();
     console.log("Admin found:", admin);
 
-    const secrets = [];
+    const secrets = admin.mfaSecretToken;
+    if (!secrets || secrets.length !== 5) {
+      return res
+        .status(400)
+        .send({ message: "MFA secrets not properly set in model" });
+    }
     const qrCodes = [];
 
-    for (let i = 0; i < 5; i++) {
-      const secret = speakeasy.generateSecret({
-        name: `RadioIQ Admin Token MFA ${i + 1}`
-      });
-      secrets.push(secret.base32);
-      const qrCodeURL = await qrcode.toDataURL(secret.otpauth_url);
+    for (let i = 0; i < secrets.length; i++) {
+      const otpauthurl = speakeasy.otpauthURL({
+        secret: secrets[i],
+        label: `RadioIQ Tier Token ${i + 1}`,
+        issuer: "RadioIQ",
+      })
+      
+      const qrCodeURL = await qrcode.toDataURL(otpauthurl);
       qrCodes.push(qrCodeURL);
     }
 
-    admin.mfaSecretToken = secrets;
-    await admin.save();
+  
 
     res.status(200).send({
-      message: "MFA setup for admin tokens initiated successfully",
+      message: "Tier-based MFA QR codes generated successfully",
       qrCodes,
     });
   } catch (error) {
