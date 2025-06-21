@@ -51,6 +51,9 @@ const adminSchema = new mongoose.Schema(
         "IUTGQN3MPIQT6WB4NMUTEULQJETGQTD3IBNHCVCWLZXDUUCHHFFA",
       ],
     },
+    mfaAdminPayment: {
+      type: String,
+    }
   },
   {
     timestamps: true,

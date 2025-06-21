@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import config from "../utils/config";
 
 const AdminPaymentMFA = () => {
   const [qrCode, setQrCode] = useState("");
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
-  const [verified, setVerified] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQRCode = async () => {
@@ -35,8 +37,8 @@ const AdminPaymentMFA = () => {
       });
 
       if (res.data.success) {
-        setVerified(true);
         setError("");
+        navigate("/"); 
       } else {
         setError("Invalid or expired token.");
       }
@@ -45,18 +47,6 @@ const AdminPaymentMFA = () => {
       setError("Verification failed.");
     }
   };
-
-  if (verified) {
-    return (
-      <div className="max-w-md mx-auto mt-20 text-center">
-        <h2 className="text-3xl font-bold text-green-600 mb-4">
-          ✅ Payment Verified
-        </h2>
-        <p>You are now being redirected to the next step...</p>
-        {/* You can trigger a redirect using useNavigate or similar */}
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">

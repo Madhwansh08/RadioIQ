@@ -583,7 +583,6 @@ exports.generatePaymentToken = async (req, res) => {
 
     const qrCodeURL = await qrcode.toDataURL(secret.otpauth_url);
 
-    // Save secret to admin model (optional)
     admin.mfaAdminPayment = secret.base32;
     await admin.save();
 
