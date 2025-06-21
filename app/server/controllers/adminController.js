@@ -334,37 +334,40 @@ exports.unBlockDoctorById = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
- 
+
 exports.deleteDoctorById = async (req, res) => {
   try {
     const { doctorId } = req.params;
- 
-    // Delete all patients for this doctor
-    const patients = await Patient.find({ doctorId });
- 
-    // Delete each patient (to trigger their post-hooks for X-ray deletion)
-    for (const patient of patients) {
-      await Patient.findByIdAndDelete(patient._id); // triggers patientSchema.post('findOneAndDelete')
-    }
-    // fetch all the xrays associated with the patients
-    const xrayIds = patients.flatMap((patient) => patient.xrays);
-    console.log("X-ray IDs to delete:", xrayIds);
- 
-    // Delete doctor after patients are removed
-    const doctor = await Doctor.findByIdAndDelete(doctorId);
+
+    const doctor = await Doctor.findById(doctorId);
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found." });
     }
+
+    const doctorTokens = doctor.tokens;
+
+    const admin = await Admin.findOne();
+    if (!admin) {
+      return res.status(500).json({ message: "Admin not found." });
+    }
+
+    admin.tokens += doctorTokens;
+    await admin.save();
+
+    const patients = await Patient.find({ doctorId });
+ 
+    for (const patient of patients) {
+      await Patient.findByIdAndDelete(patient._id); 
+    }
+    const xrayIds = patients.flatMap((patient) => patient.xrays);
+ 
+    await Doctor.findByIdAndDelete(doctorId);
  
     //verify if xrays are deleted
     if (xrayIds.length > 0) {
       const Xray = require("../models/Xray");
       await Xray.deleteMany({ _id: { $in: xrayIds } });
     }
-    console.log(
-      "X-rays deleted:",
-      xrayIds.length > 0 ? xrayIds : "No X-rays found"
-    );
  
     res.status(200).json({ message: "Doctor, patients, and xrays deleted." });
   } catch (error) {

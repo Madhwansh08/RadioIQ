@@ -110,6 +110,7 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
       await axios.delete(`${config.API_URL}/admin/doctors/${id}`, authHeader());
       toast.success("Doctor deleted successfully");
       fetchDoctors();
+      fetchAdminTokens();
     } catch (err) {
       toast.error("Error deleting doctor");
     }
@@ -383,9 +384,9 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
               onChange={(e) => setTier(e.target.value)}
             >
               <option value={0}>Select Tier</option>
-              <option value={1}>Tier 1 — 1000 tokens</option>
-              <option value={2}>Tier 2 — 2000 tokens</option>
-              <option value={3}>Tier 3 — 3000 tokens</option>
+              <option value={1}>1000 tokens</option>
+              <option value={2}>2000 tokens</option>
+              <option value={3}>3000 tokens</option>
             </select>
 
             <div className="flex justify-end space-x-2">
