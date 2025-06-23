@@ -30,6 +30,9 @@ import axios from "axios";
 import ModalDiseaseInfo from "../components/ModalDiseaseInfo";
 import UsbFolderPicker from "../components/UsbFolderPicker";
 import { BarLoader } from "../components/BarLoader";
+import logo1 from "../assets/rq.png"
+import logo2 from "../assets/rq2.png"
+
 
 const SemiCircle = lazy(() => import("../components/SemiCircle"));
 const AbnormalityBar = lazy(() => import("../components/AbnormalityBar"));
@@ -62,6 +65,21 @@ const AnalysisEdit = () => {
   const [usbModalOpen, setUsbModalOpen] = useState(false);
   const [pendingImageBlob, setPendingImageBlob] = useState(null);
   const [savingToUsb, setSavingToUsb] = useState(false);
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+  
+    useEffect(() => {
+    // Listen for class changes on html element
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const navigate = useNavigate();
   const auth = useSelector((state) => state.auth);
@@ -520,9 +538,9 @@ const AnalysisEdit = () => {
         <div className="relative items-center gap-10 flex flex-col bg-clip-border ml-10 dark:bg-[#030811] bg-[#fdfdfd] h-[calc(100vh-2rem)] w-full max-w-[20rem] p-4">
           <div>
             <img
-              src="https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png"
+                  src={isDark ? logo2 : logo1}
               alt="logo"
-              className="w-[90%] h-10 mx-auto invert grayscale dark:invert-0"
+              className="w-[90%] h-10 mx-auto"
             />
           </div>
           <nav className="flex flex-col gap-1 min-w-[240px] p-2 font-sans text-base font-normal">

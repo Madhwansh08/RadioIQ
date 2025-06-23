@@ -6,6 +6,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import Header from "../components/Header";
 import NuvaLogo from "../assets/Nuva Logo.mp4";
 import meril from "../assets/meril.jpg";
+import ISO from "../assets/ISO.png";
 
 const accordionData = [
   {
@@ -234,6 +235,55 @@ export default function About() {
               src="https://radioiq.s3.ap-south-1.amazonaws.com/static/RV_load.gif"
               alt="gif"
               className="ml-20 w-[500px]"
+            />
+          </div>
+        </div>
+      </div>
+	  
+	  <div className="mx-auto mb-16 mt-32 max-w-7xl z-10">
+        <div className="relative isolate overflow-hidden px-6 py-16 bg-[#030811] dark:bg-[#fdfdfd] shadow-lg shadow-[#5c60c6] sm:rounded-3xl sm:px-16 flex flex-col md:flex-row items-center justify-center text-center md:text-left">
+          {/* ISO Image - Replace the src below with your actual ISO image path */}
+          <div className="flex-shrink-0 mb-8 md:mb-0 md:mr-12 w-full md:w-auto flex justify-center">
+            <img
+              src={ISO} // Update this path to your actual ISO image
+              alt="ISO Certification"
+              className="w-72 h-72 object-contain rounded-lg p-2"
+            />
+          </div>
+          {/* Content */}
+          <div className="mx-auto max-w-3xl text-left text-lg dark:text-[#030811] text-[#fdfdfd] space-y-2">
+            <p>
+              <span className="font-semibold">Manufacturer Name:</span> Nuvo AI Pvt. Ltd.
+            </p>
+            <p>
+              <span className="font-semibold">Address:</span> 135/139 Survey No. 135/139 Muktanand Marg, Bilakhia House, Chala, Vapi, Pardi, Valsad Gujarat India-396191
+            </p>
+            <p>
+              <span className="font-semibold">Label No.:.</span>NAI/LBL/RadioIQ_Offline/01
+            </p>
+            <p>
+              <span className="font-semibold">Version:</span> 1.0.0
+            </p>
+            <p>
+              <span className="font-semibold">QMS Lic.:</span> EN ISO 13485: 2016
+            </p>
+            <p>
+              <span className="font-semibold">QMS Lic. No:</span> QMS-13-016-2025
+            </p>
+            <p>
+              <span className="font-semibold">QMS. Lic. No. issue date:</span> June 2025
+            </p>
+          </div>
+          <div
+            aria-hidden="true"
+            className="absolute -top-24 right-0 -z-10 transform-gpu blur-3xl"
+          >
+            <div
+              style={{
+                clipPath:
+                  "polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)",
+              }}
+              className="aspect-[1404/767] w-[87.75rem] bg-gradient-to-r from-[#80caff] to-[#4f46e5] opacity-25"
             />
           </div>
         </div>

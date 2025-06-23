@@ -12,6 +12,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { clearTableData } from "../redux/slices/tableSlice";
 import user from "../assets/user.png";
+import logo1 from "../assets/rq.png"
+import logo2 from "../assets/rq2.png"
  
 const Header = () => {
   const dispatch = useDispatch();
@@ -20,8 +22,25 @@ const Header = () => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  
  
   const navigate = useNavigate();
+  
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+  
+   useEffect(() => {
+    // Listen for class changes on html element
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
  
   // Listen for window resize and scroll events
   useEffect(() => {
@@ -221,9 +240,9 @@ const Header = () => {
               className="-m-1.5 p-1.5"
               aria-label="Navigate to home"
             >
-              <img
-                className="h-8 sm:h-10 w-auto hover:animate-pulse invert grayscale dark:invert-0"
-                src={"https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png"}
+             <img
+                className="h-8 sm:h-10 w-auto hover:animate-pulse"
+                src={isDark ? logo2 : logo1}
                 alt="CXR Vision Logo"
               />
             </button>
@@ -233,6 +252,12 @@ const Header = () => {
               <AnimatedTab onClick={() => navigate("/about")}>
                <span className="dark:text-[#fdfdfd] text-[#030811]">About</span>
               </AnimatedTab>
+			<a href="http://localhost:5174">
+  <AnimatedTab>
+    <span className="dark:text-[#fdfdfd] text-[#030811]">Switch To Admin</span>
+  </AnimatedTab>
+</a>
+
               <AnimatedTab onClick={() => navigate("/analysis/upload")}>
               <span className="dark:text-[#fdfdfd] text-[#030811]">X-ray Analysis</span>
               </AnimatedTab>

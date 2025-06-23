@@ -5,6 +5,8 @@ import config from "../utils/config";
 import Progress from "../components/Progress";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaArrowLeft, FaArrowRight, FaBars, FaTimes } from "react-icons/fa";
+import logo1 from "../assets/rq.png"
+import logo2 from "../assets/rq2.png"
 
 // CanvasOverlayStatic: Draws annotations relative to original image dimensions.
 const CanvasOverlayStatic = ({
@@ -15,7 +17,7 @@ const CanvasOverlayStatic = ({
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-
+  
   useEffect(() => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
@@ -134,6 +136,22 @@ const Quadrant = () => {
   const [slideIndex, setSlideIndex] = useState(0);
   const [itemsPerSlide, setItemsPerSlide] = useState(4);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+  
+    useEffect(() => {
+    // Listen for class changes on html element
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
 
   const mockXrayData = [
     { id: 1, imageUrl: xrayData?.url, label: "Normal" },
@@ -400,9 +418,9 @@ const Quadrant = () => {
       {/* Desktop Sidebar */}
       <div className="hidden md:flex md:w-1/5 dark:bg-[#030811] bg-[#fdfdfd] p-4 flex-col">
         <img
-          src="https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png"
+          src={isDark ? logo2 : logo1}
           alt="logo"
-          className="w-50 h-10 mx-auto invert grayscale dark:invert-0"
+          className="w-50 h-10 mx-auto "
         />
         <div className="mt-10 pt-10">
           <Progress

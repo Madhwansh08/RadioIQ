@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ModalDiseaseInfo from "./ModalDiseaseInfo";
+import feature1 from "../assets/feature1.png";
+import feature2 from "../assets/feature2.png";
+import feature3 from "../assets/feature3.png";
+import feature4 from "../assets/feature4.png";
 
 const Features = () => {
   const [activeFeature, setActiveFeature] = useState(null);
@@ -45,7 +49,7 @@ const Features = () => {
         </svg>
       ),
       image:
-        "https://res.cloudinary.com/dkaa6ubzd/image/upload/v1734339152/assetsRV/yqmormklalkuoag8ovmu.png",
+        feature1,
     },
     {
       id: 2,
@@ -67,7 +71,7 @@ const Features = () => {
         </svg>
       ),
       image:
-        "https://res.cloudinary.com/dkaa6ubzd/image/upload/v1734339149/assetsRV/h2pswmx8puhxx8b7t0ql.png",
+        feature2,
     },
     {
       id: 3,
@@ -86,7 +90,7 @@ const Features = () => {
         </svg>
       ),
       image:
-        "https://res.cloudinary.com/dh0kdktqr/image/upload/v1734667033/features_ie2nyc.png",
+        feature3,
     },
     {
       id: 4,
@@ -105,7 +109,7 @@ const Features = () => {
         </svg>
       ),
       image:
-        "https://res.cloudinary.com/dkaa6ubzd/image/upload/v1734339147/assetsRV/ghxe1rpimutanyvjx8xz.png",
+        feature4,
     },
   ];
 

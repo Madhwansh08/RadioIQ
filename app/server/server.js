@@ -11,6 +11,7 @@ const winston = require("winston");
 const cookieParser = require("cookie-parser");
 const { addClient, removeClient } = require("./sse");
 const playgroundRoutes = require("./Routes/playgroundRoutes");
+const shutdownRoutes = require('./Routes/shutdownRoutes');
 const logger = require("./logger");
 const requestLogger = require("./middleware/loggerMiddleware");
 
@@ -169,6 +170,7 @@ app.use("/admin", adminRoutes);
 app.use('/api', endPoint.usbFilesRoutes);
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 app.use("/playground", playgroundRoutes);
+app.use("/shutdown" , shutdownRoutes);
 
 // Redis Test Route
 app.get("/redis-test", async (req, res) => {

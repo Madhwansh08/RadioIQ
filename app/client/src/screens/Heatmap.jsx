@@ -5,6 +5,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import AbnormalityBar from "../components/AbnormalityBar";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { GridLoader } from "react-spinners";
+import logo1 from "../assets/rq.png"
+import logo2 from "../assets/rq2.png"
 
 import {
   FaRegEye,
@@ -70,6 +72,22 @@ const Heatmap = () => {
   const [usbModalOpen, setUsbModalOpen] = useState(false);
   const [pendingImageBlob, setPendingImageBlob] = useState(null);
   const [savingToUsb, setSavingToUsb] = useState(false);
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+  
+    useEffect(() => {
+    // Listen for class changes on html element
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+  
 
 
   const patientHistoryColumns = [
@@ -983,10 +1001,10 @@ const Heatmap = () => {
       {/* Left Sidebar (Desktop) */}
       <div className="hidden md:block w-[35%] min-h-screen dark:bg-[#030811] bg-[#fdfdfd] dark:text-white text-[#030811] flex-col py-4">
         <img
-          src="https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png"
+            src={isDark ? logo2 : logo1}
           alt="Logo"
           onClick={() => navigate("/")}
-          className="w-[35%] h-13 invert grayscale dark:invert-0 hover:opacity-80 cursor-pointer mb-10"
+          className="w-[35%] h-13  hover:opacity-80 cursor-pointer mb-10"
         />
         <div className="flex">
           <aside className="w-20 mr-1 flex flex-col items-center border-r dark:border-[#fdfdfd] border-[#030811]">

@@ -30,6 +30,8 @@ import CustomTooltip from "../components/CustomToolTip";
 import ResponsiveTable from "../components/ResponsiveTable";
 import ModalDiseaseInfo from "../components/ModalDiseaseInfo";
 import UsbFolderPicker from "../components/UsbFolderPicker";
+import logo1 from "../assets/rq.png"
+import logo2 from "../assets/rq2.png"
 
 const Analysis = () => {
   const { patientSlug, xraySlug } = useParams();
@@ -67,6 +69,21 @@ const Analysis = () => {
   const [usbModalOpen, setUsbModalOpen] = useState(false);
   const [pendingImageBlob, setPendingImageBlob] = useState(null);
   const [savingToUsb, setSavingToUsb] = useState(false);
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+
+  useEffect(() => {
+    // Listen for class changes on html element
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const patientHistoryColumns = [
     {
@@ -637,6 +654,7 @@ const Analysis = () => {
         max="100"
         value={filterValues[filter]}
         onChange={e => setFilterValues({ ...filterValues, [filter]: parseInt(e.target.value) })}
+        onInput={e => setFilterValues({ ...filterValues, [filter]: parseInt(e.target.value) })}
         className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
         style={{ WebkitTouchAction: 'pan-y', touchAction: 'pan-y' }}
       />
@@ -862,7 +880,7 @@ const Analysis = () => {
           </ToolbarButton>
         </CustomTooltip>
         {["brightness", "contrast", "negative"].map((filter) => (
-          <div key={filter} className="relative">
+          <div className="relative">
             <ToolbarButton
               onClick={() => {
                 if (filter === "negative") {
@@ -897,11 +915,15 @@ const Analysis = () => {
                 </CustomTooltip>
               )}
             </ToolbarButton>
-            {filter !== 'negative' && activeFilter === filter && (
-              <div className="absolute left-0 right-0 bottom-full mb-2 sm:left-full sm:top-0 sm:ml-2 sm:right-auto z-50">
-                {renderFilterSlider(filter)}
-              </div>
-            )}
+            {/* Always mount the slider, just control visibility */}
+            <div
+              className={`absolute left-0 right-0 bottom-full mb-2 sm:left-full sm:top-0 sm:ml-2 sm:right-auto z-50 transition-opacity duration-200 ${filter !== "negative" && activeFilter === filter
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
+                }`}
+            >
+              {renderFilterSlider(filter)}
+            </div>
           </div>
         ))}
         <CustomTooltip title="Reset">
@@ -1164,10 +1186,10 @@ const Analysis = () => {
       {/* Left Sidebar (Desktop) */}
       <div className="hidden md:block w-[35%] min-h-screen dark:bg-[#030811] bg-[#fdfdfd] dark:text-white text-[#030811] flex-col py-4">
         <img
-          src="https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png"
+          src={isDark ? logo2 : logo1}
           alt="Logo"
           onClick={() => navigate("/")}
-          className="w-[35%] h-13 invert grayscale dark:invert-0 hover:opacity-80 cursor-pointer mb-10"
+          className="w-[35%] h-13 hover:opacity-80 cursor-pointer mb-10"
         />
         <div className="flex">
           <aside className="w-20 mr-1 flex flex-col items-center border-r dark:border-[#fdfdfd] border-[#030811]">

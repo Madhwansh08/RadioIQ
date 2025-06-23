@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState , useEffect} from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Bars3Icon,
@@ -10,6 +10,8 @@ import {
 import { FaUser } from "react-icons/fa";
 import Logo from "../../assets/logo.png";
 import { CiTimer , CiUser , CiEdit} from "react-icons/ci";
+import logo1 from "../../assets/rq.png"
+import logo2 from "../../assets/rq2.png"
  
 const navigation = [
   { name: "Dashboard", path: "/dashboard", icon: HomeIcon },
@@ -27,6 +29,22 @@ const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+  
+    useEffect(() => {
+    // Listen for class changes on html element
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+  
  
   return (
     <div className="flex h-screen overflow-hidden">
@@ -79,7 +97,7 @@ const DashboardLayout = () => {
       <div className="hidden lg:flex lg:w-64 lg:flex-col dark:bg-[#030811] bg-[#fdfdfd] dark:text-white text-[#030811]">
         <div className="flex items-center justify-center h-16 border-b border-gray-300 dark:border-gray-700">
           <button onClick={() => navigate('/')} className="h-8 mr-5 pr-5">
-            <img src={"https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png"} alt="Logo" className="h-8 invert grayscale dark:invert-0"/>
+            <img src={isDark ? logo2 : logo1} alt="Logo" className="h-8 "/>
           </button>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-4 overflow-auto">

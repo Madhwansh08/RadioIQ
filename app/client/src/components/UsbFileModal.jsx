@@ -5,6 +5,7 @@ function getDeviceLabel(devicePath) {
   if (devicePath.includes("/gvfs/mtp:")) return "Android Device";
   if (devicePath.includes("/gvfs/afc:")) return "iPhone/iPad";
   if (devicePath.includes("/media/")) return "USB Drive";
+  if (devicePath.includes("/mnt/")) return "Mounted Device";
   return devicePath;
 }
 
@@ -92,26 +93,20 @@ function FolderTree({
             <li key={node.path}>
               <button
                 className={`text-left w-full px-2 py-1 rounded flex items-center
-                  focus:outline-none focus:ring-2 focus:ring-[#5c60c6]
-                  ${selectedFilePaths.has(node.path)
+      focus:outline-none focus:ring-2 focus:ring-[#5c60c6]
+      ${selectedFilePaths.has(node.path)
                     ? "bg-[#5c60c6] text-white"
                     : "hover:bg-[#5c60c6] hover:text-white dark:hover:bg-[#5c60c6] dark:text-[#fdfdfd] text-[#030811]"
                   }
-                `}
+    `}
                 tabIndex={0}
                 onClick={(e) => handleFileClick(node, e)}
                 onKeyDown={e => {
                   if (e.key === "Enter" || e.key === " ") handleFileClick(node, e);
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={selectedFilePaths.has(node.path)}
-                  onChange={() => { }} // No-op: checkbox is controlled by button click
-                  className="mr-2 accent-[#5c60c6] dark:accent-[#fdfdfd]"
-                  tabIndex={-1}
-                  readOnly
-                />
+                {/* Optionally show a checkmark if selected */}
+                <span className="mr-2">{selectedFilePaths.has(node.path) ? "✔️" : ""}</span>
                 {node.name}
               </button>
             </li>
@@ -243,8 +238,8 @@ export default function UsbFileModal({ open, onClose, onFileSelect }) {
           </button>
           <button
             className={`px-4 py-2 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#4750b3] ${allFiles.length > 0
-                ? "bg-[#5c60c6] hover:bg-[#4750b3]"
-                : "bg-gray-300 cursor-not-allowed"
+              ? "bg-[#5c60c6] hover:bg-[#4750b3]"
+              : "bg-gray-300 cursor-not-allowed"
               }`}
             onClick={() => {
               if (allFiles.length > 0) {

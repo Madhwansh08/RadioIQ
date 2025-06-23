@@ -2,8 +2,18 @@ import React from "react";
 import ReactApexChart from "react-apexcharts";
 
 const ChartTwo = ({ commonAbnormalities }) => {
-  const labels = commonAbnormalities.map((item) => item.name); // Extract labels (abnormality names)
-  const series = commonAbnormalities.map((item) => item.count); // Extract series (counts)
+  // Don't render chart if data is not available yet
+  if (!commonAbnormalities || commonAbnormalities.length === 0) {
+    return (
+      <div className="sm:px-7.5 col-span-12 rounded-sm border border-black/20 border-stroke bg-black dark:bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-5 flex items-center justify-center min-h-[300px]">
+        <span className="text-white dark:text-black">Loading chart...</span>
+        {/* You can replace this with a spinner component */}
+      </div>
+    );
+  }
+
+  const labels = commonAbnormalities.map((item) => item.name);
+  const series = commonAbnormalities.map((item) => item.count);
 
   const options = {
     chart: {
