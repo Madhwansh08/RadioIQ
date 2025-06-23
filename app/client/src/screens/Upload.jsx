@@ -70,6 +70,15 @@ const PatientDataTable = ({
   const firstItem = totalItems === 0 ? 0 : startIndex + 1;
   const lastItem = Math.min(startIndex + itemsPerPage, totalItems);
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
+  const patientIdWarnTimeout = useRef();
+
+  useEffect(() => {
+    return () => {
+      if (patientIdWarnTimeout.current) {
+        clearTimeout(patientIdWarnTimeout.current);
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -89,13 +98,23 @@ const PatientDataTable = ({
             const displayIndex = idx + startIndex;
             const originalIndex = tableData.length - 1 - displayIndex;
             return (
-              <tr key={row.patientId || originalIndex}>
+              <tr key={originalIndex}>
                 <td className="py-2 px-4 border">
                   <input
                     type="text"
                     name="patientId"
                     value={row.patientId}
-                    onChange={(e) => handleInputChange(e, originalIndex)}
+                    onChange={(e) => {
+                      handleInputChange(e, originalIndex);
+
+                      // Debounce the warning toast
+                      if (patientIdWarnTimeout.current) {
+                        clearTimeout(patientIdWarnTimeout.current);
+                      }
+                      patientIdWarnTimeout.current = setTimeout(() => {
+                        toast.warn("Editing Patient ID is not recommended. Please double-check before changing.");
+                      }, 700); // 700ms pause before warning
+                    }}
                     className="w-full p-1 border rounded dark:text-[#fdfdfd] text-[#030811] dark:bg-[#030811] bg-[#fdfdfd] font-bold"
                   />
                 </td>
@@ -119,9 +138,10 @@ const PatientDataTable = ({
                     value={row.age}
                     onChange={(e) => handleInputChange(e, originalIndex)}
                     min="0"
+                    max="150"
                     step="1"
                     onKeyPress={(e) => {
-                      if (e.key === '-') {
+                      if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === '.') {
                         e.preventDefault();
                       }
                     }}
@@ -133,7 +153,30 @@ const PatientDataTable = ({
                     type="number"
                     name="location"
                     value={row.location || ''}
-                    onChange={(e) => handlePincodeChange(e, originalIndex)}
+                    onChange={(e) => {
+                      // Restrict input to max 6 digits
+                      let val = e.target.value;
+                      if (val.length > 6) val = val.slice(0, 6);
+                      handlePincodeChange({ ...e, target: { ...e.target, value: val } }, originalIndex);
+                    }}
+                    min="10000"
+                    max="999999"
+                    step="1"
+                    onKeyPress={(e) => {
+                      // Prevent entering '-', '+', '.', 'e'
+                      if (['-', '+', '.', 'e'].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                      // Prevent entering more than 6 digits
+                      const input = e.target;
+                      if (
+                        input.value.length >= 6 &&
+                        // Allow selection replace
+                        input.selectionStart === input.selectionEnd
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
                     className="w-full p-1 border rounded dark:bg-[#030811] bg-[#fdfdfd] dark:text-[#fdfdfd] text-[#030811] font-medium"
                     placeholder="Type pincode"
                   />
@@ -376,6 +419,8 @@ const Upload = () => {
     setUploading(false);
   }
 };
+
+  // Validate age in 0-150 before updating redux
   const handleInputChange = (e, actualIndex) => {
     const { name, value } = e.target;
     if (name === "age") {
@@ -387,9 +432,11 @@ const Upload = () => {
           notify('error', "Age must be a number.");
           return;
         }
-        if (numValue < 0) {
-          notify('error', "Age cannot be less than 0.");
-          dispatch(updateTableRow({ index: actualIndex, key: name, value: 0 }));
+        if (numValue < 0 || numValue > 150) {
+          notify('error', "Age must be between 0 and 150.");
+          // Clamp to nearest valid value
+          const validValue = Math.max(0, Math.min(150, numValue));
+          dispatch(updateTableRow({ index: actualIndex, key: name, value: validValue }));
         } else {
           dispatch(updateTableRow({ index: actualIndex, key: name, value: numValue }));
         }
@@ -399,9 +446,30 @@ const Upload = () => {
     }
   };
 
+  // Validate pincode on change (only allow 5 or 6 digit numbers, positive)
   const handlePincodeChange = (e, index) => {
     const { value } = e.target;
     const actualIndex = index;
+    // Allow empty for edit, else must be 5 or 6 digits and positive
+    if (value === "") {
+      dispatch(updateTableRow({ index: actualIndex, key: "location", value: "" }));
+      setEditingRowIndex(actualIndex);
+      setPincode(value);
+      return;
+    }
+    // Only allow digits
+    if (!/^\d+$/.test(value)) {
+      notify('error', "Pin code must be a positive number.");
+      return;
+    }
+    // Must be 5 or 6 digits
+    if (value.length < 0 || value.length > 6) {
+      dispatch(updateTableRow({ index: actualIndex, key: "location", value }));
+      setEditingRowIndex(actualIndex);
+      setPincode(value);
+      return;
+    }
+    // Valid
     dispatch(updateTableRow({ index: actualIndex, key: "location", value }));
     setEditingRowIndex(actualIndex);
     setPincode(value);

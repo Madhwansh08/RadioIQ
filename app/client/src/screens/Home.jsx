@@ -2,11 +2,10 @@ import React, { useRef, useEffect, lazy, Suspense, useState, useCallback } from 
 import throttle from "lodash.throttle";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import ShutdownButton from "../components/ShutdownButton";
 import CountUp from "react-countup";
 import { useInView } from "react-intersection-observer";
 import Features from "../components/Features";
-import Testimonials from "../components/Testimonials";
-// import Playground from "../components/Playground";
 import Contact from "../components/Contact";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -149,7 +148,7 @@ const Home = () => {
 
   return (
     
-    <div className="dark:bg-[#030811] bg-[#fdfdfd] w-full">
+    <div className="dark:bg-[#030811] bg-[#fdfdfd] w-full custom-scrollbar overflow-x-hidden">
        {showExpired && (
         <SessionExpiredModal
           message="Your session has expired. Please log in again."
@@ -329,17 +328,20 @@ const Home = () => {
         </Suspense>
       </section>
 
-      <section data-aos="fade-up">
+      {/* <section data-aos="fade-up">
         <Suspense fallback={<div className="h-96 w-full bg-gray-200 animate-pulse" />}>
           <Research />
         </Suspense>
       </section>
+	   */}
+	  
+	  <div className="mx-4 px-5 w-full dark:bg-[#030811] bg-[#5C60C6]">
+	  <ShutdownButton/>
+	  </div>
 
 
 
-      <section ref={contactRef} data-aos="fade-up">
-        <Testimonials />
-      </section>
+     
 
       {/* Playground Section */}
       {/* <section data-aos="fade-up" className="my-2" >

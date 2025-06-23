@@ -2,8 +2,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import config from "../../utils/config";
-
-
+ 
+ 
 const cleanUserData = (user) => {
   if (!user) return null;
   
@@ -24,7 +24,7 @@ const cleanUserData = (user) => {
     hospital,
     gender,
   } = user;
-
+ 
   return {
     _id,
     name,
@@ -43,7 +43,7 @@ const cleanUserData = (user) => {
     gender,
   };
 };
-
+ 
 // Utility to load auth state from localStorage
 const loadAuthFromLocalStorage = () => {
   try {
@@ -56,14 +56,14 @@ const loadAuthFromLocalStorage = () => {
     return { user: null, profilePicture: "", loading: false, error: null };
   }
 };
-
+ 
 // Utility to save auth state to localStorage
 const saveAuthToLocalStorage = (state) => {
   try {
     const cleanedUser = cleanUserData(state.user);
     const profilePicture =
       state.profilePicture || (cleanedUser && cleanedUser.profilePicture) || "";
-
+ 
     localStorage.setItem(
       "auth",
       JSON.stringify({ user: cleanedUser, profilePicture })
@@ -72,7 +72,7 @@ const saveAuthToLocalStorage = (state) => {
     console.error("Error saving auth to localStorage:", error);
   }
 };
-
+ 
 // Async thunk for user registration
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
@@ -92,7 +92,7 @@ export const registerUser = createAsyncThunk(
     }
   }
 );
-
+ 
 // Async thunk for user login
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
@@ -103,7 +103,7 @@ export const loginUser = createAsyncThunk(
         { email, password },
         { withCredentials: true }
       );
-
+ 
       const cleanedUser = cleanUserData(response.data.user);
       // Server sets JWT as an httpOnly cookie; return user data only.
       return { user: cleanedUser };
@@ -114,7 +114,7 @@ export const loginUser = createAsyncThunk(
     }
   }
 );
-
+ 
 // Async thunk for user logout
 export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
@@ -133,7 +133,7 @@ export const logoutUser = createAsyncThunk(
     }
   }
 );
-
+ 
 // Async thunk to fetch (rehydrate) the user profile using the user-auth endpoint
 export const fetchUserProfile = createAsyncThunk(
   "auth/fetchUserProfile",
@@ -145,7 +145,7 @@ export const fetchUserProfile = createAsyncThunk(
       );
       // Expecting response.data: { ok: true, user: { ... } }
       const cleanedUser = cleanUserData(response.data.user);
-
+ 
       return cleanedUser;
     } catch (error) {
       console.error("Fetch user profile error:", error);
@@ -155,7 +155,7 @@ export const fetchUserProfile = createAsyncThunk(
     }
   }
 );
-
+ 
 // Async thunk to fetch the profile picture
 export const fetchProfilePicture = createAsyncThunk(
   "auth/fetchProfilePicture",
@@ -174,10 +174,10 @@ export const fetchProfilePicture = createAsyncThunk(
     }
   }
 );
-
+ 
 // Initial state: load from localStorage
 const initialState = loadAuthFromLocalStorage();
-
+ 
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -279,6 +279,6 @@ const authSlice = createSlice({
     });
   },
 });
-
+ 
 export const { setUser, clearUser, updateAuth } = authSlice.actions;
 export default authSlice.reducer;

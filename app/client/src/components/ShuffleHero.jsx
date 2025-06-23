@@ -1,7 +1,8 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
+import hero from '../assets/hero.gif'
 
-const herolink = 'https://radio-vision.s3.ap-south-1.amazonaws.com/RadioVision/static/RV-+hero+image.gif';
+
 
 const ShuffleHero = () => {
   return (
@@ -33,7 +34,7 @@ const HeroVid = () => {
   return (
     // "hidden md:flex" hides the GIF on small screens, shows it on medium and above
     <div className="relative w-full h-[450px] flex justify-center items-center hidden md:flex hidden lg:flex ">
-      <img className="w-full" alt="hero" src={herolink} />
+      <img className="w-full" alt="hero" src={hero} />
     </div>
   );
 };

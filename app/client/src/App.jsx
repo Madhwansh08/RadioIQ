@@ -1,7 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./screens/Home";
-import MetaData from "./components/dashcomponents/MetaData";
 import About from "./screens/About";
 import Analysis from "./screens/Analysis";
 import { Provider } from 'react-redux'
@@ -25,14 +24,14 @@ import Tables from "./components/dashcomponents/Tables";
 import PublicRoute from "./routes/Public";
 import { initSse } from "./redux/slices/sseSlice";
 import {PersistGate} from "redux-persist/integration/react";
-
-
-
+ 
+ 
+ 
 store.dispatch(initSse());
-
+ 
 function App() {
   return (
-
+ 
     <Provider store={store}>
     <PersistGate loading={null} persistor={persistor}>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -48,23 +47,23 @@ function App() {
   pauseOnFocusLoss
   transition={Zoom}
   transitionDuration={{ enter: 300, exit: 200 }}
-
+ 
 />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               {/* <Route path="/playground" element={<PlaygroundUpload />} />
               <Route path="/playground/playground-analysis" element={<PlaygroundAnalysis/>} /> */}
-
-
+ 
+ 
               {/* Public Routes */}
               <Route element={<PublicRoute />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot" element={<Forgot />} />
               </Route>
-
-
+ 
+ 
               {/* Dashboard route with PrivateRoute */}
               <Route element={<PrivateRoute />}>
           
@@ -72,13 +71,12 @@ function App() {
                   <Route index element={<Dashboard />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="tables" element={<Tables />} />
-                  <Route path="metadata" element={<MetaData />} />
                 </Route>
            
               </Route>
-
-
-
+ 
+ 
+ 
               {/* Analysis routes with PrivateRoute */}
               <Route element={<PrivateRoute />}>
                 
@@ -94,41 +92,41 @@ function App() {
               >
                 <Route index element={<Heatmap />} />
               </Route>
-
-
+ 
+ 
               <Route
                 path="/analysis/:patientSlug/:xraySlug/quadrant"
                 element={<PrivateRoute />}
               >
                 <Route index element={<Quadrant />} />
               </Route>
-
-
+ 
+ 
               <Route
                 path="/analysis/:patientSlug/:xraySlug/edit"
                 element={<PrivateRoute />}
               >
                 <Route index element={<AnalysisEdit />} />
               </Route>
-
-
-
-
+ 
+ 
+ 
+ 
              
-
-
-
+ 
+ 
+ 
               <Route
                 path="/analysis/:patientSlug/:xraySlug/report"
                 element={<PrivateRoute />}
               >
                 <Route index element={<Report />} />
               </Route>
-
+ 
               <Route path="/analysis/upload" element={<PrivateRoute />}>
                 <Route index element={<Upload />} />
               </Route>
-
+ 
               {/* Catch-all error route */}
               <Route path="*" element={<Error />} />
             </Routes>
@@ -136,8 +134,8 @@ function App() {
         </Router>
     </PersistGate>
     </Provider>
-
+ 
   );
 }
-
+ 
 export default App;

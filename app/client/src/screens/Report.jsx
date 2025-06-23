@@ -9,6 +9,9 @@ import axios from "axios";
 import config from "../utils/config";
 import logo from "../assets/logo.png";
 import logo1 from "../assets/logo1_resize.png";
+import logo3 from "../assets/rq.png"
+import logo2 from "../assets/rq2.png"
+
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
@@ -31,6 +34,21 @@ const Report = () => {
   const [usbModalOpen, setUsbModalOpen] = useState(false);
   const [pendingPdfBlob, setPendingPdfBlob] = useState(null);
   const auth = useSelector((state) => state.auth);
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+  
+    useEffect(() => {
+    // Listen for class changes on html element
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const [formData, setFormData] = useState({
     patientName: "",
@@ -1282,9 +1300,9 @@ const Report = () => {
         className="absolute top-4 left-4"
       >
         <img
-          src="https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png"
+          src={isDark ? logo2 : logo3}
           alt="Logo"
-          className="h-14 w-auto invert grayscale dark:invert-0 "
+          className="h-14 w-auto  "
         />
       </motion.div>
       <button

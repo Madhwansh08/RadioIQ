@@ -7,11 +7,14 @@ import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
 import {
-  ArrowRightStartOnRectangleIcon,
   Cog6ToothIcon,
+  ArrowsRightLeftIcon
 } from "@heroicons/react/24/outline";
 import { clearTableData } from "../redux/slices/tableSlice";
-
+import user from "../assets/user.png";
+import logo1 from "../assets/rq.png"
+import logo2 from "../assets/rq2.png"
+ 
 const Header = () => {
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
@@ -19,9 +22,26 @@ const Header = () => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-
+  
+ 
   const navigate = useNavigate();
-
+  
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+  
+   useEffect(() => {
+    // Listen for class changes on html element
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+ 
   // Listen for window resize and scroll events
   useEffect(() => {
     const handleResize = () => {
@@ -30,11 +50,11 @@ const Header = () => {
         setIsMenuOpen(false);
       }
     };
-
+ 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-
+ 
     window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll);
     return () => {
@@ -42,32 +62,32 @@ const Header = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
+ 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
-
+ 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
-
+ 
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser()).unwrap();
       dispatch(clearTableData());
       
       toast.success("User logged out");
-      navigate("/");
+      navigate("/login");
       setIsDropdownOpen(false);
     } catch (error) {
       toast.error("Logout failed");
     }
   };
-
+ 
   // Animated tab for desktop nav links
   const AnimatedTab = ({ children, onClick }) => {
     const [isHovered, setIsHovered] = useState(false);
-
+ 
     return (
       <div
         className="relative cursor-pointer px-3 py-2"
@@ -100,11 +120,11 @@ const Header = () => {
       </div>
     );
   };
-
+ 
   // Avatar dropdown (for desktop)
   const AvatarDropdown = () => {
     const dropdownRef = useRef(null);
-
+ 
     // Close dropdown if clicked outside
     useEffect(() => {
       const handleClickOutside = (event) => {
@@ -115,13 +135,13 @@ const Header = () => {
           setIsDropdownOpen(false);
         }
       };
-
+ 
       document.addEventListener("mousedown", handleClickOutside);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }, []);
-
+ 
     return (
       <div className="relative" ref={dropdownRef}>
         <div
@@ -133,15 +153,7 @@ const Header = () => {
             if (e.key === "Enter" || e.key === " ") toggleDropdown();
           }}
         >
-          {auth?.profilePicture ? (
-            <img
-              src={auth.profilePicture}
-              alt="Profile"
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <span>{auth?.user?.name?.[0]?.toUpperCase() || "U"}</span>
-          )}
+          <img src={user} alt="User" className="rounded-full"/>
         </div>
         <AnimatePresence>
   {isDropdownOpen && (
@@ -154,17 +166,12 @@ const Header = () => {
     >
       {/* Display User Info */}
       <div className="flex items-center space-x-3 mb-4">
-  {auth?.profilePicture ? (
     <img
-      src={auth.profilePicture}
+      src={user}
       alt="Profile"
       className="w-12 h-12 rounded-full object-cover"
     />
-  ) : (
-    <div className="w-12 h-12 bg-[#5c60c6] rounded-full flex items-center justify-center text-white">
-      {auth?.user?.name?.[0]?.toUpperCase() || "U"}
-    </div>
-  )}
+  
   <div className="flex flex-col min-w-0">
     <p className="font-semibold text-sm dark:text-[#fdfdfd] text-[#030811] truncate">
       {auth?.user?.name || "Unknown User"}
@@ -174,7 +181,7 @@ const Header = () => {
     </p>
   </div>
 </div>
-
+ 
       <hr className="mb-3" />
       {/* Dropdown Actions */}
       <button
@@ -190,7 +197,7 @@ const Header = () => {
         <Cog6ToothIcon className="w-5 h-5" />
         <span>Profile Settings</span>
       </button>
-
+ 
       <button
         aria-label="Logout"
         onClick={handleLogout}
@@ -198,8 +205,8 @@ const Header = () => {
         tabIndex="0"
       >
         {/* Logout Icon */}
-        <ArrowRightStartOnRectangleIcon className="h-5 w-5" />
-        <span>Logout</span>
+        <ArrowsRightLeftIcon className="h-5 w-5" />
+        <span>Switch User</span>
       </button>
       <div className="mt-2 items-center justify-center px-4 py-2 w-full">
         <ThemeToggle />
@@ -207,13 +214,13 @@ const Header = () => {
     </motion.div>
   )}
 </AnimatePresence>
-
+ 
       </div>
     );
   };
-
+ 
   return (
-
+ 
     <header
     className={`fixed top-0 w-full z-50 ${
       isScrolled
@@ -233,9 +240,9 @@ const Header = () => {
               className="-m-1.5 p-1.5"
               aria-label="Navigate to home"
             >
-              <img
-                className="h-8 sm:h-10 w-auto hover:animate-pulse invert grayscale dark:invert-0"
-                src={"https://radioiq.s3.ap-south-1.amazonaws.com/static/RadioIQ.png"}
+             <img
+                className="h-8 sm:h-10 w-auto hover:animate-pulse"
+                src={isDark ? logo2 : logo1}
                 alt="CXR Vision Logo"
               />
             </button>
@@ -245,6 +252,12 @@ const Header = () => {
               <AnimatedTab onClick={() => navigate("/about")}>
                <span className="dark:text-[#fdfdfd] text-[#030811]">About</span>
               </AnimatedTab>
+			<a href="http://localhost:5174">
+  <AnimatedTab>
+    <span className="dark:text-[#fdfdfd] text-[#030811]">Switch To Admin</span>
+  </AnimatedTab>
+</a>
+
               <AnimatedTab onClick={() => navigate("/analysis/upload")}>
               <span className="dark:text-[#fdfdfd] text-[#030811]">X-ray Analysis</span>
               </AnimatedTab>
@@ -286,7 +299,7 @@ const Header = () => {
             </button>
           )}
         </nav>
-
+ 
         {/* Mobile Menu */}
         {isMenuOpen && !isDesktop && (
           <div
@@ -342,7 +355,7 @@ const Header = () => {
                   </svg>
                 </button>
               </div>
-
+ 
               <div className="mt-6">
                 {auth?.user ? (
                   <>
@@ -402,7 +415,7 @@ const Header = () => {
                       }}
                       className="block w-full rounded-lg px-4 py-2 mb-2 text-base font-semibold text-[#fdfdfd] hover:bg-[#5c60c6] hover:text-white"
                     >
-                      Log out
+                      Switch User
                     </button>
                   </>
                 ) : (
@@ -421,8 +434,8 @@ const Header = () => {
           </div>
         )}
       </header>
-
+ 
   );
 };
-
+ 
 export default Header;
