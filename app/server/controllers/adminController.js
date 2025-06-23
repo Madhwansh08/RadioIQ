@@ -1,6 +1,7 @@
 const Doctor = require("../models/Doctor");
 const Admin = require("../models/Admin");
 const Patient  = require("../models/Patient");
+const InferenceBox = require("../models/InferenceBox");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const speakeasy = require("speakeasy");
@@ -28,6 +29,14 @@ exports.initiateAdminRegistration = async (req, res) => {
       return res.status(403).send({ message: "Admin already exists. Please log in." });
     }
 
+    const inferenceBox = await InferenceBox.findOne({ paymentMFAToken: { $exists: true, $ne: null } });
+
+    if (!inferenceBox) {
+      return res.status(400).send({
+        message: "Inference box not configured. Please set up the box MFA before admin registration.",
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const resetCode = await getNanoid();
 
@@ -39,6 +48,7 @@ exports.initiateAdminRegistration = async (req, res) => {
       resetCode,
       isPrimary: true,
       mfaEnabled: false,
+      mfaAdminPayment: inferenceBox.paymentMFAToken,
     });
 
     await admin.save();
