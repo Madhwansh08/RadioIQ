@@ -8,7 +8,7 @@ import tnc from "../../assets/Radioiq-TnC.pdf";
 import pp from "../../assets/Radioiq-PP.pdf";
 import PdfModal from "../../components/PdfModal";
 import { MdContentCopy, MdClose } from "react-icons/md";
-
+ 
 const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -17,7 +17,7 @@ const Register = () => {
     email: "",
     password: "",
   });
-
+ 
   const [showResetCodeModal, setShowResetCodeModal] = useState(false);
   const [generatedResetCode, setGeneratedResetCode] = useState("");
   const [pdfModal, setPdfModal] = useState({ open: false, url: "", title: "" });
@@ -26,7 +26,7 @@ const Register = () => {
   // const [otpToken, setOtpToken] = useState(null);
   // const [otp, setOtp] = useState(new Array(6).fill(""));
   // const inputRefs = useRef([]);
-
+ 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -34,7 +34,7 @@ const Register = () => {
       [name]: value,
     }));
   };
-
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -76,7 +76,7 @@ const Register = () => {
       toast.error("You must agree to the terms and conditions");
       return;
     }
-
+ 
     try {
       const response = await axios.post(
         `${config.API_URL}/api/auth/register`,
@@ -335,7 +335,7 @@ const Register = () => {
             >
               <MdClose size={24} />
             </button>
-
+ 
             <h2 className="text-2xl font-bold mb-4 text-gray-800">
               Important!
             </h2>
@@ -355,13 +355,13 @@ const Register = () => {
                 <MdContentCopy size={20} />
               </button>
             </div>
-
+ 
             <p className="text-sm text-gray-600 mb-6">
               Please save this code safely. You will need it to reset your
               password in the future. Take a screenshot, copy it, or download
               it.
             </p>
-
+ 
             <button
               onClick={() => {
                 const blob = new Blob([generatedResetCode], {
@@ -390,5 +390,6 @@ const Register = () => {
     </div>
   );
 };
-
+ 
 export default Register;
+ 

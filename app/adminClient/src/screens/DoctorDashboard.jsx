@@ -3,7 +3,9 @@ import React, { useState } from "react";
 import axios from "axios";
 import config from "../utils/config";
 import { toast } from "react-toastify";
-
+import { authHeader } from "../utils/authHeader";
+import { motion } from "framer-motion";
+ 
 export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
   const [show, setShow] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -12,13 +14,18 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [docEmail, setDocEmail] = useState("");
   const [docPassword, setDocPassword] = useState("");
-
+ 
   const addDoctor = async () => {
     try {
       const res = await axios.post(
         `${config.API_URL}/admin/doctors/add`,
-        { name, email: docEmail, phoneNumber, password: docPassword },
-        { withCredentials: true }
+        {
+          name,
+          email: docEmail,
+          phoneNumber,
+          password: docPassword,
+        },
+        authHeader()
       );
       toast.success(res.data.message || "Doctor added successfully");
       setShow(false);
@@ -31,79 +38,72 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
       toast.error(error.response?.data?.message || "Error adding doctor");
     }
   };
-
+ 
   const verifyDoctor = async (id) => {
     try {
-      await axios.patch(
-        `${config.API_URL}/admin/doctors/${id}/verify`,
-        {},
-        { withCredentials: true }
-      );
+      await axios.patch(`${config.API_URL}/admin/doctors/${id}/verify`, {}, authHeader());
       toast.success("Doctor verified successfully");
       fetchDoctors();
     } catch (err) {
-      console.error("Error verifying doctor:", err);
       toast.error("Error verifying doctor");
     }
   };
-
+ 
   const blockDoctor = async (id) => {
     try {
-      await axios.patch(
-        `${config.API_URL}/admin/doctors/${id}/block`,
-        {},
-        { withCredentials: true }
-      );
+      await axios.patch(`${config.API_URL}/admin/doctors/${id}/block`, {}, authHeader());
       toast.success("Doctor blocked successfully");
       fetchDoctors();
     } catch (err) {
-      console.error("Error blocking doctor:", err);
       toast.error("Error blocking doctor");
     }
   };
-
+ 
   const unblockDoctor = async (id) => {
     try {
-      await axios.patch(
-        `${config.API_URL}/admin/doctors/${id}/unblock`,
-        {},
-        { withCredentials: true }
-      );
+      await axios.patch(`${config.API_URL}/admin/doctors/${id}/unblock`, {}, authHeader());
       toast.success("Doctor unblocked successfully");
       fetchDoctors();
     } catch (err) {
-      console.error("Error unblocking doctor:", err);
       toast.error("Error unblocking doctor");
     }
   };
-
+ 
   const deleteDoctor = async (id) => {
     try {
-      await axios.delete(`${config.API_URL}/admin/doctors/${id}`, {
-        withCredentials: true,
-      });
+      await axios.delete(`${config.API_URL}/admin/doctors/${id}`, authHeader());
       toast.success("Doctor deleted successfully");
       fetchDoctors();
     } catch (err) {
-      console.error("Error deleting doctor:", err);
       toast.error("Error deleting doctor");
     }
   };
-
+ 
   return (
     <div className="w-full mx-8 mt-16">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-5xl font-bold">Doctors List</h1>
+      <motion.div
+        className="flex justify-between items-center mb-6"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h1 className="text-5xl font-bold text-[#5c60c6]">Doctors List</h1>
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-[#5c60c6] text-white px-6 py-2 rounded hover:bg-[#030811] transition-all"
           onClick={() => setShow(true)}
         >
           Add Doctor
         </button>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead>
+      </motion.div>
+ 
+      <motion.div
+        className="overflow-x-auto"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <table className="min-w-full bg-white border border-gray-200 rounded shadow-md">
+          <thead className="bg-[#f4f4f4]">
             <tr>
               <th className="border px-4 py-2">Name</th>
               <th className="border px-4 py-2">Email</th>
@@ -116,8 +116,8 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
             </tr>
           </thead>
           <tbody>
-            {doctors.map((doc) => (
-              <tr key={doc._id}>
+            {doctors?.map((doc) => (
+              <tr key={doc._id} className="hover:bg-gray-50">
                 <td className="border px-4 py-2">{doc.name}</td>
                 <td className="border px-4 py-2">{doc.email}</td>
                 <td className="border px-4 py-2">{doc.phoneNumber}</td>
@@ -129,7 +129,7 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
                     </span>
                   ) : (
                     <button
-                      className="bg-green-500 text-white px-2 py-1 rounded"
+                      className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
                       onClick={() => verifyDoctor(doc._id)}
                     >
                       Verify
@@ -149,7 +149,7 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
                 </td>
                 <td className="border px-4 py-2">
                   <button
-                    className="bg-yellow-500 text-white px-2 py-1 rounded"
+                    className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
                     onClick={() =>
                       doc.isBlocked
                         ? unblockDoctor(doc._id)
@@ -161,7 +161,7 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
                 </td>
                 <td className="border px-4 py-2">
                   <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
+                    className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                     onClick={() => {
                       setDoctorToDelete(doc._id);
                       setShowDeleteModal(true);
@@ -174,90 +174,67 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
             ))}
           </tbody>
         </table>
-      </div>
-
+      </motion.div>
+ 
       {show && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Add Doctor</h2>
             <div className="mb-4">
               <label className="block mb-1">Name</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border rounded"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <input type="text" className="w-full px-3 py-2 border rounded" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="mb-4">
               <label className="block mb-1">Email</label>
-              <input
-                type="email"
-                className="w-full px-3 py-2 border rounded"
-                value={docEmail}
-                onChange={(e) => setDocEmail(e.target.value)}
-              />
+              <input type="email" className="w-full px-3 py-2 border rounded" value={docEmail} onChange={(e) => setDocEmail(e.target.value)} />
             </div>
             <div className="mb-4">
               <label className="block mb-1">Phone Number</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border rounded"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-              />
+              <input type="text" className="w-full px-3 py-2 border rounded" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
             </div>
             <div className="mb-4">
               <label className="block mb-1">Password</label>
-              <input
-                type="password"
-                className="w-full px-3 py-2 border rounded"
-                value={docPassword}
-                onChange={(e) => setDocPassword(e.target.value)}
-              />
+              <input type="password" className="w-full px-3 py-2 border rounded" value={docPassword} onChange={(e) => setDocPassword(e.target.value)} />
             </div>
             <div className="flex justify-end space-x-2">
-              <button
-                className="bg-gray-400 text-white px-4 py-2 rounded"
-                onClick={() => setShow(false)}
-              >
+              <button className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => setShow(false)}>
                 Cancel
               </button>
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-                onClick={addDoctor}
-              >
+              <button className="bg-[#5c60c6] text-white px-4 py-2 rounded hover:bg-[#030811]" onClick={addDoctor}>
                 Add
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
+ 
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50">
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
             <p className="mb-4">Are you sure you want to delete this doctor?</p>
             <div className="flex justify-end space-x-2">
-              <button
-                className="bg-gray-400 text-white px-4 py-2 rounded"
-                onClick={() => setShowDeleteModal(false)}
-              >
+              <button className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => setShowDeleteModal(false)}>
                 Cancel
               </button>
-              <button
-                className="bg-red-600 text-white px-4 py-2 rounded"
-                onClick={async () => {
-                  await deleteDoctor(doctorToDelete);
-                  setShowDeleteModal(false);
-                  setDoctorToDelete(null);
-                }}
-              >
+              <button className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" onClick={async () => {
+                await deleteDoctor(doctorToDelete);
+                setShowDeleteModal(false);
+                setDoctorToDelete(null);
+              }}>
                 Delete
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

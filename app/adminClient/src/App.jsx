@@ -7,13 +7,8 @@ export default function App() {
   return (
     <div className="App">
       <Routes>
-        <Route
-          path="/"
-          element={
-            <AdminScreen />
-          }
-        />
+        <Route path="/" element={<AdminScreen />} />
       </Routes>
     </div>
-  )
+  );
 }
