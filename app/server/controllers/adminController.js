@@ -5,7 +5,6 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
-const { TimeSeriesAggregationType } = require("redis");
  
 async function getNanoid() {
   const { customAlphabet } = await import("nanoid");
@@ -190,6 +189,16 @@ exports.verifyAndEnableMfa = async (req, res) => {
     res.status(500).send({ message: "Internal server error" });
   }
 };
+
+exports.checkAdminExists = async (req, res) => {
+  try{
+    const admin = await Admin.findOne({});
+    res.send({ exists: !!admin });
+  }catch(error){
+    console.error("Verify MFA error:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+}
 
 exports.addDoctor = async (req, res) => {
   try {
@@ -497,41 +506,6 @@ exports.getAdminTokens = async (req, res) => {
   }
 }
 
-exports.initiateAdminTokenMFA = async (req, res) => {
-  try {
-    const admin = await Admin.findOne();
-    console.log("Admin found:", admin);
-
-    const secrets = admin.mfaSecretToken;
-    if (!secrets || secrets.length !== 5) {
-      return res
-        .status(400)
-        .send({ message: "MFA secrets not properly set in model" });
-    }
-    const qrCodes = [];
-
-    for (let i = 0; i < secrets.length; i++) {
-      const otpauthurl = speakeasy.otpauthURL({
-        secret: secrets[i],
-        label: `RadioIQ Tier Token ${i + 1}`,
-        issuer: "RadioIQ",
-        encoding: "base32",
-      });
-      console.log(`Secret for QR ${i + 1}:`, secrets[i]);
-      const qrCodeURL = await qrcode.toDataURL(otpauthurl);
-      qrCodes.push(qrCodeURL);
-    }
-
-    res.status(200).send({
-      message: "Tier-based MFA QR codes generated successfully",
-      qrCodes,
-    });
-  } catch (error) {
-    console.error("Error initiating MFA tokens:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
 exports.verifySingleAdminTokenMFA = async (req, res) => {
   try {
     const { token, index } = req.body;
@@ -574,66 +548,6 @@ exports.verifySingleAdminTokenMFA = async (req, res) => {
   }
 };
 
-exports.generatePaymentToken = async (req, res) => {
-  try {
-    const admin = await Admin.findOne();
-    if (!admin) return res.status(404).send({ message: "Admin not found" });
-
-    const email = admin.email;
-
-    const secret = speakeasy.generateSecret({
-      name: `RadioIQ PMFA (${email})`,
-    });
-
-    const qrCodeURL = await qrcode.toDataURL(secret.otpauth_url);
-
-    admin.mfaAdminPayment = secret.base32;
-    await admin.save();
-
-    res.status(200).send({
-      message: "Scan the QR to setup MFA and initiate payment",
-      tempData: {
-        mfaAdminPayment: secret.base32,
-      },
-      qrCodeURL,
-    });
-  } catch (error) {
-    console.error("Error initiating payment:", error);
-    res.status(500).send({ message: "Internal server error" });
-  }
-};
-
-exports.verifyPaymentToken = async (req, res) => {
-  try {
-    const { token } = req.body;
-
-    const admin = await Admin.findOne();
-    if (!admin || !admin.mfaAdminPayment) {
-      return res.status(403).send({ message: "MFA not configured" });
-    }
-
-    const verified = speakeasy.totp.verify({
-      secret: admin.mfaAdminPayment,
-      encoding: "base32",
-      token,
-      window: 1,
-    });
-
-    if (!verified) {
-      return res
-        .status(401)
-        .send({ message: "Invalid or expired payment token" });
-    }
-
-    res.status(200).send({
-      message: "Payment verified successfully",
-      success: true,
-    });
-  } catch (error) {
-    console.error("Payment verification error:", error);
-    res.status(500).send({ message: "Internal server error" });
-  }
-};
 
 exports.verifyAdminPaymentToken = async (req, res) => {
   try {

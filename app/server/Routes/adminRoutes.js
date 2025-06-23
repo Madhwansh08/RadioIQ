@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const Admin = require("../models/Admin");
 const AdminController = require("../controllers/adminController");
 const {
   adminAuthMiddleware,
@@ -19,10 +18,7 @@ router.post("/setup-mfa", AdminController.setupAdminMfa);
 router.post("/verify-mfa-setup", AdminController.verifyAndEnableMfa);
 
 // Doctor Management
-router.get(
-  "/doctors",
-  AdminController.getAllDoctors
-);
+router.get("/doctors", AdminController.getAllDoctors);
 router.post(
   "/doctors/add",
   adminAuthMiddleware,
@@ -54,10 +50,7 @@ router.delete(
   AdminController.deleteDoctorById
 );
 
-router.get("/adminExists", async (req, res) => {
-  const admin = await Admin.findOne({});
-  res.send({ exists: !!admin });
-});
+router.get("/adminExists", AdminController.checkAdminExists);
 
 router.post(
   "/assignTokens/:doctorId",
@@ -80,23 +73,24 @@ router.get(
   AdminController.getAdminTokens
 );
 
-
-router.post(
-  "/initiateAdminTokenMFA",
-  AdminController.initiateAdminTokenMFA
-);
-
 router.post(
   "/verifySingleAdminMFAToken",
   AdminController.verifySingleAdminTokenMFA
 );
 
-router.post("/initiateAdminMFA", AdminController.generatePaymentToken);
 
-router.post("/verifyAdminMFA", AdminController.verifyPaymentToken);
+router.post(
+  "/verify-payment-token",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.verifyAdminPaymentToken
+);
 
-router.post("/verify-payment-token", adminAuthMiddleware, isAdmin, AdminController.verifyAdminPaymentToken);
-
-router.post("/assign-tokens-after-mfa",adminAuthMiddleware, isAdmin, AdminController.verifyTierTokenAndAssignTokens);
+router.post(
+  "/assign-tokens-after-mfa",
+  adminAuthMiddleware,
+  isAdmin,
+  AdminController.verifyTierTokenAndAssignTokens
+);
 
 module.exports = router;

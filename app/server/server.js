@@ -28,6 +28,7 @@ const endPoint = require("./endPoints");
 
 // Import Routes
 const adminRoutes = require("./Routes/adminRoutes");
+const inferenceRoutes = require("./Routes/inferenceRoutes");
 const authRoutes = require("./Routes/authRoutes");
 const xrayRoutes = require("./Routes/xrayRoutes");
 const patientRoutes = require("./Routes/patientRoutes");
@@ -166,6 +167,7 @@ app.use(endPoint.useAuthRoutes, authRoutes);
 app.use(endPoint.useContactRoutes, contactRoutes);
 app.use(endPoint.useReportRoutes, reportRoutes);
 app.use("/admin", adminRoutes);
+app.use("/inference", inferenceRoutes);
 app.use('/api', endPoint.usbFilesRoutes);
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 app.use("/playground", playgroundRoutes);
