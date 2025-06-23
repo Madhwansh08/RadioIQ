@@ -7,7 +7,7 @@ const adminAuthMiddleware = async (req, res, next) => {
     ? req.header("Authorization").replace("Bearer ", "")
     : null;
 
-  if (!token && req.cookies && req.cookies.token) {
+  if (!token && req.cookies?.token) {
     token = req.cookies.token;
   }
 

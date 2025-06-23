@@ -558,7 +558,6 @@ exports.verifySingleAdminTokenMFA = async (req, res) => {
   }
 };
 
-
 exports.verifyAdminPaymentToken = async (req, res) => {
   try {
     const { paymentToken } = req.body;

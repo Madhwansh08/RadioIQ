@@ -10,7 +10,8 @@ const inferenceBoxSchema = new mongoose.Schema({
     boxNo: {
         type: String,
         required: true,
-        trim:true
+        trim:true,
+        unique: true
     },
     paymentMFAToken: {
         type: String,
@@ -20,7 +21,6 @@ const inferenceBoxSchema = new mongoose.Schema({
         default: false,
         required: true
     }
-
 })
 
 const InferenceBox = mongoose.model("InferenceBox", inferenceBoxSchema);
