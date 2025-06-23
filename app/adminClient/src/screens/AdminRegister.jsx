@@ -27,7 +27,7 @@ const AdminRegister = ({ onRegisterSuccess }) => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        `${config.API_URL}/admin/adminInitRegister`,
+        `${config.API_URL}/admin/register`,
         formData
       );
       setQrCodeURL(res.data.qrCodeURL);

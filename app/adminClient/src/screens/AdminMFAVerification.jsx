@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import config from "../utils/config";
 
 const AdminMFAStepper = () => {
   const [qrCodes, setQrCodes] = useState([]);

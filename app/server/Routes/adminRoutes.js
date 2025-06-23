@@ -7,22 +7,20 @@ const {
   isAdmin,
 } = require("../middleware/adminAuthMiddleware");
 
-// Admin Registration (2-step MFA secure)
-router.post("/adminInitRegister", AdminController.initiateAdminRegistration);
-router.post(
-  "/adminCompleteRegister",
-  AdminController.completeAdminRegistration
-);
+// Admin Registration
+router.post("/register", AdminController.initiateAdminRegistration);
 
-// Admin Login Flow
-router.post("/adminLogin", AdminController.loginAdmin);
-router.post("/adminVerifyMfa", AdminController.verifyMfa);
+// Login Flow
+router.post("/login", AdminController.loginAdmin);
+router.post("/verify-mfa", AdminController.verifyMfa);
 
-// Doctor Management (Admin Protected)
+// MFA Setup (post-login)
+router.post("/setup-mfa", AdminController.setupAdminMfa);
+router.post("/verify-mfa-setup", AdminController.verifyAndEnableMfa);
+
+// Doctor Management
 router.get(
   "/doctors",
-  adminAuthMiddleware,
-  isAdmin,
   AdminController.getAllDoctors
 );
 router.post(
@@ -85,20 +83,20 @@ router.get(
 
 router.post(
   "/initiateAdminTokenMFA",
-  // adminAuthMiddleware,
-  // isAdmin,
   AdminController.initiateAdminTokenMFA
 );
 
 router.post(
   "/verifySingleAdminMFAToken",
-  // adminAuthMiddleware,
-  // isAdmin,
   AdminController.verifySingleAdminTokenMFA
 );
 
 router.post("/initiateAdminMFA", AdminController.generatePaymentToken);
 
 router.post("/verifyAdminMFA", AdminController.verifyPaymentToken);
+
+router.post("/verify-payment-token", adminAuthMiddleware, isAdmin, AdminController.verifyAdminPaymentToken);
+
+router.post("/assign-tokens-after-mfa",adminAuthMiddleware, isAdmin, AdminController.verifyTierTokenAndAssignTokens);
 
 module.exports = router;

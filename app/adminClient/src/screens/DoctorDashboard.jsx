@@ -5,8 +5,10 @@ import config from "../utils/config";
 import { toast } from "react-toastify";
 import { authHeader } from "../utils/authHeader";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import AddDoctorModal from "./AddDoctorModal";
 
-export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
+export default function DoctorDashboard({ doctors, fetchDoctors }) {
   const [show, setShow] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAssignTokensModal, setShowAssignTokensModal] = useState(false);
@@ -20,6 +22,7 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
   const [docEmail, setDocEmail] = useState("");
   const [docPassword, setDocPassword] = useState("");
   const [tier, setTier] = useState(0);
+  const navigate = useNavigate();
 
   const fetchAdminTokens = async () => {
     try {
@@ -168,6 +171,12 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
         >
           Add Doctor
         </button>
+        <button
+          className="bg-[#5c60c6] text-white px-6 py-2 rounded hover:bg-[#030811] transition-all"
+          onClick={() => navigate("/assigntokenstoadmin")}
+        >
+          Add Tokens
+        </button>
       </motion.div>
 
       <motion.div
@@ -277,65 +286,10 @@ export default function DoctorDashboard({ doctors, fetchDoctors, setDoctors }) {
       </motion.div>
 
       {show && (
-        <motion.div
-          className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add Doctor</h2>
-            <div className="mb-4">
-              <label className="block mb-1">Name</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border rounded"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block mb-1">Email</label>
-              <input
-                type="email"
-                className="w-full px-3 py-2 border rounded"
-                value={docEmail}
-                onChange={(e) => setDocEmail(e.target.value)}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block mb-1">Phone Number</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border rounded"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block mb-1">Password</label>
-              <input
-                type="password"
-                className="w-full px-3 py-2 border rounded"
-                value={docPassword}
-                onChange={(e) => setDocPassword(e.target.value)}
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <button
-                className="bg-gray-400 text-white px-4 py-2 rounded"
-                onClick={() => setShow(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="bg-[#5c60c6] text-white px-4 py-2 rounded hover:bg-[#030811]"
-                onClick={addDoctor}
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        </motion.div>
+        <AddDoctorModal
+          onClose={() => setShow(false)}
+          fetchDoctors={fetchDoctors}
+        />
       )}
 
       {showDeleteModal && (

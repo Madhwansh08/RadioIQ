@@ -19,108 +19,56 @@ async function getNanoid() {
 exports.initiateAdminRegistration = async (req, res) => {
   try {
     const { name, email, password } = req.body;
- 
+
     if (!name || !email || !password) {
       return res.status(400).send({ message: "Please fill all required fields" });
     }
- 
+
     const adminExists = await Admin.findOne({});
     if (adminExists) {
-      return res.status(403).send({ message: "Admin already exists. Cannot register another. Please Log-In" });
+      return res.status(403).send({ message: "Admin already exists. Please log in." });
     }
- 
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const resetCode = await getNanoid();
- 
-    const secret = speakeasy.generateSecret({
-      name: `RadioIQ (${email})`
-    });
- 
-    const qrCodeURL = await qrcode.toDataURL(secret.otpauth_url);
- 
-    // Respond without saving
-    res.status(200).send({
-      message: "Scan the QR to setup MFA and complete registration",
-      tempData: {
-        name,
-        email,
-        hashedPassword,
-        role: "Admin",
-        resetCode,
-        mfaSecret: secret.base32
-      },
-      qrCodeURL
-    });
-  } catch (error) {
-    console.error("Error in registration init:", error);
-    res.status(500).send({ message: "Internal server error" });
-  }
-};
- 
-exports.completeAdminRegistration = async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      hashedPassword,
-      role,
-      resetCode,
-      mfaSecret,
-      token
-    } = req.body;
- 
-    const verified = speakeasy.totp.verify({
-      secret: mfaSecret,
-      encoding: "base32",
-      token,
-      window: 1
-    });
- 
-    if (!verified) {
-      return res.status(401).send({ message: "Invalid MFA token" });
-    }
- 
+
     const admin = new Admin({
       name,
       email,
       password: hashedPassword,
-      role,
+      role: "Admin",
       resetCode,
       isPrimary: true,
-      mfaSecret,
-      mfaEnabled: true
+      mfaEnabled: false,
     });
- 
+
     await admin.save();
- 
-    res.status(201).send({
-      message: "Admin registered successfully"
-    });
- 
+
+    res.status(201).send({ message: "Admin registered successfully" });
   } catch (error) {
-    console.error("Error completing admin registration:", error);
+    console.error("Error registering admin:", error);
     res.status(500).send({ message: "Internal server error" });
   }
 };
- 
+
 exports.loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
- 
+
     if (!email || !password) {
       return res.status(400).send({ message: "Please fill all required fields" });
     }
- 
+
     const admin = await Admin.findOne({ email });
     if (!admin) {
       return res.status(404).send({ message: "Admin not found" });
     }
- 
+
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
-      return res.status(401).send({ message: "Invalid Password" });
+      return res.status(401).send({ message: "Invalid password" });
     }
- 
+
     if (admin.mfaEnabled) {
       return res.status(206).send({
         message: "MFA required",
@@ -128,28 +76,28 @@ exports.loginAdmin = async (req, res) => {
         adminId: admin._id,
       });
     }
- 
+
     const token = jwt.sign(
       { id: admin._id, role: admin.role },
       process.env.JWT_SECRET,
       { expiresIn: "365d" }
     );
- 
+
     res.status(200).send({
       message: "Login successful",
       success: true,
+      token,
       admin: {
         name: admin.name,
         email: admin.email,
-        phoneNumber: admin.phoneNumber,
       },
     });
   } catch (error) {
-    res.status(400).send({ message: error.message });
+    console.error("Login error:", error);
+    res.status(400).send({ message: "Internal server error" });
   }
 };
- 
- 
+
 exports.verifyMfa = async (req, res) => {
   try {
     const { adminId, token: userToken } = req.body;
@@ -186,8 +134,63 @@ exports.verifyMfa = async (req, res) => {
     res.status(500).send({ message: "Internal server error" });
   }
 };
- 
- 
+
+exports.setupAdminMfa = async (req, res) => {
+  try {
+    const admin = await Admin.findOne();
+    if (!admin) {
+      return res.status(404).send({ message: "Admin not found" });
+    }
+
+    const secret = speakeasy.generateSecret({
+      name: `RadioIQ (${admin.email})`,
+    });
+
+    const qrCodeURL = await qrcode.toDataURL(secret.otpauth_url);
+
+    admin.mfaSecret = secret.base32;
+    await admin.save();
+
+    res.status(200).send({
+      message: "Scan the QR to setup MFA",
+      qrCodeURL,
+    });
+  } catch (error) {
+    console.error("Setup MFA error:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+exports.verifyAndEnableMfa = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    const admin = await Admin.findOne();
+    if (!admin || !admin.mfaSecret) {
+      return res.status(400).send({ message: "MFA secret not found. Please generate QR first." });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: admin.mfaSecret,
+      encoding: "base32",
+      token,
+      window: 1,
+    });
+
+    if (!verified) {
+      return res.status(401).send({ message: "Invalid MFA token" });
+    }
+
+    admin.mfaEnabled = true;
+    await admin.save();
+
+    res.status(200).send({ message: "MFA setup completed" });
+  } catch (error) {
+    console.error("Verify MFA error:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
 exports.addDoctor = async (req, res) => {
   try {
     const {
@@ -266,7 +269,7 @@ exports.addDoctor = async (req, res) => {
     res.status(500).send({ message: "Internal server error" });
   }
 };
- 
+
 exports.getAllDoctors = async (req, res) => {
   try {
     const doctors = await Doctor.find({ role: "Doctor" });
@@ -571,8 +574,6 @@ exports.verifySingleAdminTokenMFA = async (req, res) => {
   }
 };
 
- 
-
 exports.generatePaymentToken = async (req, res) => {
   try {
     const admin = await Admin.findOne();
@@ -633,4 +634,81 @@ exports.verifyPaymentToken = async (req, res) => {
     res.status(500).send({ message: "Internal server error" });
   }
 };
- 
+
+exports.verifyAdminPaymentToken = async (req, res) => {
+  try {
+    const { paymentToken } = req.body;
+
+    if (!paymentToken) {
+      return res.status(400).send({ message: "Payment OTP is required" });
+    }
+
+    const admin = await Admin.findOne();
+    if (!admin || !admin.mfaAdminPayment) {
+      return res.status(403).send({ message: "Payment MFA not configured" });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: admin.mfaAdminPayment,
+      encoding: "base32",
+      token: paymentToken,
+      window: 1,
+    });
+
+    if (!verified) {
+      return res.status(401).send({ message: "Invalid or expired payment OTP" });
+    }
+
+    res.status(200).send({ message: "Payment token verified successfully" });
+  } catch (error) {
+    console.error("verifyAdminPaymentToken error:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+exports.verifyTierTokenAndAssignTokens = async (req, res) => {
+  try {
+    const { tierToken, tier } = req.body;
+
+    if (!tierToken || typeof tier !== "number") {
+      return res.status(400).send({ message: "Tier and OTP are required" });
+    }
+
+    if (tier < 1 || tier > 5) {
+      return res.status(400).send({ message: "Tier must be between 1 and 5" });
+    }
+
+    const admin = await Admin.findOne();
+    if (!admin || !Array.isArray(admin.mfaSecretToken)) {
+      return res.status(500).send({ message: "MFA secret not properly configured" });
+    }
+
+    const index = tier - 1;
+    const secret = admin.mfaSecretToken[index];
+
+    const verified = speakeasy.totp.verify({
+      secret,
+      encoding: "base32",
+      token: tierToken,
+      window: 1,
+    });
+
+    if (!verified) {
+      return res.status(401).send({ message: "Invalid tier OTP" });
+    }
+
+    const tokenAmounts = [5000, 10000, 25000, 50000, 100000];
+    const tokensToAdd = tokenAmounts[index];
+
+    admin.tokens += tokensToAdd;
+    await admin.save();
+
+    res.status(200).send({
+      message: `Successfully assigned ${tokensToAdd} tokens`,
+      newTotal: admin.tokens,
+    });
+  } catch (error) {
+    console.error("verifyTierTokenAndAssignTokens error:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
