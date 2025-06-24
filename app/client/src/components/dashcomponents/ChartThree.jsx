@@ -58,6 +58,9 @@ const ChartThree = ({ abnormalityGenderCount }) => {
         stacked: true,
         height: '100%',
         fontFamily: 'poppins',
+        toolbar: {
+          show: false, // Show toolbar for user interaction
+        },
       },
       plotOptions: {
         bar: {

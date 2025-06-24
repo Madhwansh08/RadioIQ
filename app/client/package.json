@@ -50,7 +50,8 @@
     "redux": "^5.0.1",
     "redux-persist": "^6.0.0",
     "three": "^0.171.0",
-    "vitest-fetch-mock": "^0.4.3"
+    "vitest-fetch-mock": "^0.4.3",
+    "qrcode.react": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

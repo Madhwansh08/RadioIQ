@@ -37,7 +37,9 @@ const ChartFive = ({ abnormalityLocationCount }) => {
       type: 'heatmap',
       height: '100%',
       fontFamily: 'poppins',
-    
+      toolbar: {
+          show: false, // Show toolbar for user interaction
+        },
     },
     plotOptions: {
       heatmap: {

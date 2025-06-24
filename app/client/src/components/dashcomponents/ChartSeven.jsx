@@ -11,7 +11,7 @@ const ChartSeven = ({ tbCategories }) => {
         background: "transparent", // Transparent background for a modern look
         foreColor: "#030811", // Text color
         toolbar: {
-          show: true, // Show toolbar for user interaction
+          show: false, // Show toolbar for user interaction
         },
       },
       labels: ["Low Possibility", "Medium Possibility", "High Possibility"],

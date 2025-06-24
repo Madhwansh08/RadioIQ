@@ -279,21 +279,7 @@ const Dashboard = () => {
 
         {/* Toggle for ChartFive / ChartEight */}
         <div className="w-full shadow-[#030811] drop-shadow-sm">
-          <div className="mb-4 flex justify-end">
-            <button
-              onClick={() => setShowChartFive((prev) => !prev)}
-              className="bg-[#030811] hover:bg-[#5c60c6] text-white px-4 py-2 rounded-full"
-            >
-              {showChartFive ? "Switch to Map View" : "Switch to Basic"}
-            </button>
-          </div>
-
-          {showChartFive ? (
             <ChartFive abnormalityLocationCount={abnormalityLocationCount} />
-          ) : (
-            // Pass the heatmapLink as a prop to ChartEight
-            <ChartEight heatmapLink={heatmapLink} />
-          )}
         </div>
       </div>
     </div>

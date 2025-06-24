@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { QRCodeSVG } from "qrcode.react";
+
+const VIDEO_URL_1 = "https://radioiq.s3.ap-south-1.amazonaws.com/static/Radio+IQ+Video.mp4";
+const VIDEO_URL_2 = "https://radioiq.s3.ap-south-1.amazonaws.com/static/Radio+IQ+Video.mp4"; // replace with your second video URL
 
 export default function DemoComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,82 +25,40 @@ export default function DemoComponent() {
                   </h1>
                   <p className="mt-4 text-xl dark:text-gray-400 text-gray-600">
                     Explore how AI-powered solutions are transforming medical
-                    imaging by accurately detecting abnormalities. Watch our
-                    demo to see the future of diagnostics in action.
+                    imaging by accurately detecting abnormalities. <br />
+                    <span className="font-semibold text-[#5c60c6] dark:text-[#b2b7ff]">
+                      Scan the QR codes to watch the demo video on your device!
+                    </span>
                   </p>
-                  <div className="mt-8">
-                    <button
-                      onClick={() => setIsModalOpen(true)}
-                      className="inline-block rounded-md border border-transparent bg-[#5c60c6] px-8 py-3 font-medium text-white hover:bg-indigo-700"
-                    >
-                      Watch Full Demo
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
-          {/* Video Section - Hidden on mobile */}
-          <div className="hidden lg:block relative h-48 w-full rounded-t-lg sm:h-64 lg:absolute lg:right-0 lg:top-0 lg:h-full lg:w-1/2">
-            {/* Gradient Overlay */}
+          {/* QR Codes Section - Hidden on mobile */}
+          <div className="hidden lg:flex flex-col items-center justify-center relative h-48 w-full rounded-t-lg sm:h-64 lg:absolute lg:right-0 lg:top-0 lg:h-full lg:w-1/2">
             <div className="absolute inset-0 bg-gradient-to-t from-[#030811] to-transparent pointer-events-none"></div>
-
-            {/* Video */}
-            <video
-              className="h-full w-full object-contain"
-              muted
-              loop
-              playsInline
-              onMouseOver={(e) => e.target.play()}
-              onFocus={(e) => e.target.play()}
-              onMouseOut={(e) => e.target.pause()}
-              onBlur={(e) => e.target.pause()}
-            >
-              <source
-                src="https://radioiq.s3.ap-south-1.amazonaws.com/static/Radio+IQ+Video.mp4"
-                type="video/mp4"
-              />
-            </video>
+            <div className="relative z-10 flex flex-col items-center justify-center space-y-8 h-full">
+              <div className="flex flex-row items-center justify-center space-x-24">
+                <div className="flex flex-col items-center">
+                  <QRCodeSVG value={VIDEO_URL_1} size={240} fgColor="#030811" bgColor="#fdfdfd" />
+                  <span className="mt-2 text-sm text-[#030811] dark:text-[#fdfdfd] font-medium">
+                    Product Demo
+                  </span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <QRCodeSVG value={VIDEO_URL_2} size={240} fgColor="#5c60c6" bgColor="#fdfdfd" />
+                  <span className="mt-2 text-sm text-[#030811] dark:text-[#fdfdfd] font-medium">
+                    Admin Demo
+                  </span>
+                </div>
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Scan with your camera to view online
+              </span>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="relative bg-white rounded-lg shadow-lg w-full max-w-6xl"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <button
-                className="absolute top-4 right-4 bg-[#030811] hover:bg-[#5c60c6] text-[#fdfdfd] font-bold rounded-lg p-2 shadow-lg z-50"
-                onClick={() => setIsModalOpen(false)}
-                aria-label="Close"
-              >
-                ✖
-              </button>
-              <div className="aspect-w-16 aspect-h-9 relative">
-                <iframe
-                  className="w-full h-full rounded-b-lg"
-                  src="https://radioiq.s3.ap-south-1.amazonaws.com/static/Radio+IQ+Video.mp4"
-                  title="YouTube video player"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

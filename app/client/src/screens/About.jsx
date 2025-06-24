@@ -7,6 +7,7 @@ import Header from "../components/Header";
 import NuvaLogo from "../assets/Nuva Logo.mp4";
 import meril from "../assets/meril.jpg";
 import ISO from "../assets/ISO.png";
+import RV_load from "../assets/RV_load.gif";
 
 const accordionData = [
   {
@@ -232,7 +233,7 @@ export default function About() {
           </div>
           <div className="w-1/2">
             <img
-              src="https://radioiq.s3.ap-south-1.amazonaws.com/static/RV_load.gif"
+              src={RV_load} // Update this path to your actual GIF image
               alt="gif"
               className="ml-20 w-[500px]"
             />
