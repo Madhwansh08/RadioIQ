@@ -86,10 +86,11 @@ exports.verifyPaymentMFA = async (req, res) => {
 
 exports.checkBoxConfigured = async (req, res) => {
   try {
-    const box = await InferenceBox.findOne({});
-    res.send({ exists: !!box });
+    const box = await InferenceBox.findOne({ paymentMFAEnabled: true });
+    res.send({ exists: !!box }); 
   } catch (error) {
     console.error("Verify MFA error:", error);
     res.status(500).send({ message: "Internal server error" });
   }
 };
+

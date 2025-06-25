@@ -1,107 +1,132 @@
 import React, { useState, useEffect } from "react";
-import AdminLogin from "./AdminLogin";
-import AdminRegister from "./AdminRegister";
-import DoctorDashboard from "./DoctorDashboard";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import config from "../utils/config";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import config from "../utils/config";
-import { authHeader } from "../utils/authHeader";
- 
+import AdminLogin from "./AdminLogin";
+import AdminRegister from "./AdminRegister";
+
 export default function AdminScreen() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [adminExists, setAdminExists] = useState(null); // null = unknown
-  const [doctors, setDoctors] = useState([]);
- 
+  const [boxConfigured, setBoxConfigured] = useState(null);
+  const [adminExists, setAdminExists] = useState(null);
+  const [name, setName] = useState("");
+  const [boxNumber, setBoxNumber] = useState("");
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      const isAuth = sessionStorage.getItem("isAuthenticated") === "true";
-  
+    const checkStatus = async () => {
       try {
-        // Always check backend for admin existence
-        const res = await axios.get(`${config.API_URL}/admin/adminExists`);
-        const exists = res.data.exists;
-  
-        sessionStorage.setItem("adminExists", exists);
-        setAdminExists(exists);
-  
-        if (!exists) {
-          // If admin no longer exists, force logout
-          sessionStorage.removeItem("isAuthenticated");
-          sessionStorage.removeItem("adminToken");
-          setIsAuthenticated(false);
-          setDoctors([]);
-          return; // stop further checks
-        }
-  
-        if (isAuth) {
-          setIsAuthenticated(true);
-          fetchDoctors();
+        const boxRes = await axios.get(
+          `${config.API_URL}/inference/check-box-configured`
+        );
+        console.log("Box Configured?", boxRes.data.exists);
+
+        const boxExists = boxRes.data.exists === true; 
+        sessionStorage.setItem("boxConfigured", JSON.stringify(boxExists));
+        setBoxConfigured(boxExists);
+
+        if (boxExists) {
+          const adminRes = await axios.get(
+            `${config.API_URL}/admin/adminExists`
+          );
+          const exists = adminRes.data.exists === true; 
+          sessionStorage.setItem("adminExists", JSON.stringify(exists));
+          setAdminExists(exists);
         }
       } catch (err) {
-        console.error("Admin existence check failed", err);
-        toast.error("Error checking admin status");
+        console.error("Error checking status:", err);
+        toast.error("Failed to verify system status");
       }
     };
-  
-    checkAdminStatus();
+
+    checkStatus();
   }, []);
   
- 
-  const handleAdminRegistered = () => {
-    console.log("Admin registered. Updating state.");
-    sessionStorage.setItem("adminExists", "true");
-    setAdminExists(true);
-  };
-  
-  
-  const fetchDoctors = async () => {
-    try {
-      const response = await axios.get(`${config.API_URL}/admin/doctors`, {
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("adminToken")}`,
-        },
-      });
-      
-      setDoctors(response?.data?.doctors);
-    } catch (error) {
-      toast.error("Access denied or session expired");
-      console.error("Error fetching doctors:", error);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name || !boxNumber) {
+      toast.error("Both fields are required");
+      return;
     }
+
+    sessionStorage.setItem("boxUserName", name);
+    sessionStorage.setItem("boxNumber", boxNumber);
+    toast.success("Details successfully saved");
+
+    setTimeout(() => {
+      navigate("/adminpayverification");
+    }, 1000);
   };
- 
-  if (adminExists === null) {
+
+  // Still loading
+  if (boxConfigured === null || (boxConfigured && adminExists === null)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-gray-600 text-xl">Checking system status...</p>
       </div>
     );
   }
- 
+  console.log(
+    "Final state => boxConfigured:",
+    boxConfigured,
+    "adminExists:",
+    adminExists
+  );
+
+
   return (
-    <div className="flex justify-center w-full min-h-screen">
-      <ToastContainer position="top-right" autoClose={2000} hideProgressBar newestOnTop={true} />
- 
-      {(() => {
-        if (!adminExists) {
-          return <AdminRegister onRegisterSuccess={handleAdminRegistered} />;
-        } else if (!isAuthenticated) {
-          return (
-            <AdminLogin
-              setIsAuthenticated={setIsAuthenticated}
-              fetchDoctors={fetchDoctors}
-            />
-          );
-        } else {
-          return (
-            <DoctorDashboard
-              doctors={doctors}
-              fetchDoctors={fetchDoctors}
-              setDoctors={setDoctors}
-            />
-          );
-        }
-      })()}
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar
+        newestOnTop
+      />
+
+      {!boxConfigured ? (
+        // Show Box Config Form
+        <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
+          <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+            Configure Box
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">
+                Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring focus:border-blue-400"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">
+                Box Number
+              </label>
+              <input
+                type="text"
+                value={boxNumber}
+                onChange={(e) => setBoxNumber(e.target.value)}
+                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring focus:border-blue-400"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+            >
+              Save
+            </button>
+          </form>
+        </div>
+      ) : adminExists ? (
+        <AdminLogin />
+      ) : (
+        <AdminRegister />
+      )}
     </div>
   );
 }

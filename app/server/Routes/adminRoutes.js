@@ -21,8 +21,8 @@ router.post("/verify-mfa-setup", AdminController.verifyAndEnableMfa);
 router.get("/doctors", AdminController.getAllDoctors);
 router.post(
   "/doctors/add",
-  adminAuthMiddleware,
-  isAdmin,
+  adminAuthMiddleware, 
+  isAdmin,   
   AdminController.addDoctor
 );
 router.patch(

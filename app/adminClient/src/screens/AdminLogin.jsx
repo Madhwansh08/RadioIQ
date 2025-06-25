@@ -1,168 +1,143 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
 import config from "../utils/config";
+import axiosInstance from "../utils/axiosInstance";
 import { toast } from "react-toastify";
-import { motion } from "framer-motion";
- 
-export default function AdminLogin({ setIsAuthenticated, fetchDoctors }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [mfaToken, setMfaToken] = useState(Array(6).fill(""));
-  const inputRefs = useRef([]);
-  const [adminId, setAdminId] = useState(null);
+import { useNavigate } from "react-router-dom";
+
+export default function AdminLogin() {
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
- 
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [tempToken, setTempToken] = useState(null);
+  const [otp, setOtp] = useState(Array(6).fill(""));
+  const inputRefs = useRef([]);
+  const navigate = useNavigate();
+
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     try {
-      const res = await axios.post(
-        `${config.API_URL}/admin/adminLogin`,
-        { email, password },
-        { withCredentials: true }
-      );
- 
+      console.log("✅Submitting form data:", formData);
+      const res = await axios.post(`${config.API_URL}/admin/login`, formData);
+      
+
       if (res.data.mfaRequired) {
-        setAdminId(res.data.adminId);
+        setTempToken(res.data.tempToken);
         setStep(2);
-        toast.info("MFA required: Enter your 6-digit code");
-      } else {
-        handleSuccess(res);
+      } else if (res.data.token) {
+        toast.success("Login successful!");
+        if (res.data.token) {
+          localStorage.setItem("adminToken", res.data.token);
+        }
+        navigate("/admin-dashboard");
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Login failed");
-    } finally {
-      setLoading(false);
+      
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Login failed");
     }
   };
- 
-  const handleMfaVerification = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        `${config.API_URL}/admin/adminVerifyMfa`,
-        { adminId, token: mfaToken.join("") },
-        { withCredentials: true }
-      );
-      handleSuccess(res);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "MFA verification failed");
-    } finally {
-      setLoading(false);
-    }
-  };
- 
-  const handleSuccess = (res) => {
-    const token = res.data.token;
-    if (token) {
-      sessionStorage.setItem("adminToken", token);
-    }
-    toast.success(res.data.message || "Login successful");
-    sessionStorage.setItem("isAuthenticated", "true");
-    setIsAuthenticated(true);
-    fetchDoctors();
-  };
- 
+
   const handleOtpChange = (value, index) => {
     if (/^\d$/.test(value) || value === "") {
-      const updatedOtp = [...mfaToken];
-      updatedOtp[index] = value;
-      setMfaToken(updatedOtp);
-      if (value && index < 5) inputRefs.current[index + 1].focus();
+      const updated = [...otp];
+      updated[index] = value;
+      setOtp(updated);
+      if (value && index < 5) inputRefs.current[index + 1]?.focus();
     }
   };
- 
+
   const handleOtpKeyDown = (e, index) => {
-    if (e.key === "Backspace" && mfaToken[index] === "" && index > 0) {
-      inputRefs.current[index - 1].focus();
+    if (e.key === "Backspace" && otp[index] === "" && index > 0) {
+      inputRefs.current[index - 1]?.focus();
     }
   };
- 
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axiosInstance.post(`/admin/verify-mfa`, {
+        token: tempToken,
+        otp: otp.join(""),
+      });
+      
+
+      toast.success("MFA verified!");
+      if (res.data.token) {
+        localStorage.setItem("adminToken", res.data.token);
+      }
+      navigate("/admin-dashboard");
+
+    } catch (err) {
+      toast.error(err.response?.data?.message || "MFA verification failed");
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-[100%] bg-[#fdfdfd] px-4">
-      <motion.div
-        className="text-center text-6xl w-full mb-24 font-bold text-[#5c60c6] mb-2"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        Welcome to <span className="text-[#030811]">RadioIQ Admin Panel</span>
-      </motion.div>
-      <motion.form
-        onSubmit={step === 1 ? handleLogin : handleMfaVerification}
-        className="bg-white p-12 rounded-3xl shadow-lg w-full max-w-lg"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="text-center text-3xl  font-semibold text-black mb-10">
-          Login Form
-        </div>
- 
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+          Admin Login
+        </h2>
+
         {step === 1 && (
-          <>
-            <div className="mb-6">
-              <label className="block mb-2 font-medium">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border rounded-md bg-gray-50 dark:bg-[#1f1f3a] text-gray-900 dark:text-white"
-                required
-              />
-            </div>
-            <div className="mb-8">
-              <label className="block mb-2 font-medium">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border rounded-md bg-gray-50 dark:bg-[#1f1f3a] text-gray-900 dark:text-white"
-                required
-              />
-            </div>
-          </>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border rounded-md"
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border rounded-md"
+            />
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+            >
+              Login
+            </button>
+          </form>
         )}
- 
+
         {step === 2 && (
-          <div className="mb-8">
-            <label className="block mb-4 text-center text-lg font-medium dark:text-white">
-              Enter 6-digit MFA Token
-            </label>
-            <div className="flex justify-center gap-3">
-              {mfaToken.map((digit, index) => (
+          <form onSubmit={handleVerifyOtp} className="space-y-6">
+            <p className="text-center text-gray-600">
+              Enter the 6-digit MFA code
+            </p>
+            <div className="flex justify-center gap-2">
+              {otp.map((digit, index) => (
                 <input
                   key={index}
                   type="text"
-                  value={digit}
                   maxLength={1}
+                  value={digit}
                   onChange={(e) => handleOtpChange(e.target.value, index)}
                   onKeyDown={(e) => handleOtpKeyDown(e, index)}
                   ref={(el) => (inputRefs.current[index] = el)}
-                  className="w-12 h-12 text-center text-xl border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-[#1f1f3a] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#5c60c6]"
+                  className="w-12 h-12 text-center border rounded-md text-xl"
                 />
               ))}
             </div>
-          </div>
+            <button
+              type="submit"
+              className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition"
+            >
+              Verify OTP
+            </button>
+          </form>
         )}
-        <button
-          type="submit"
-          className="w-full group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md bg-[#5c60c6] px-6 font-medium text-white transition hover:shadow-[0_4px_15px_#5c60c6]"
-        >
-          <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-[1.5s] group-hover:[transform:skew(-12deg)_translateX(100%)]">
-            <div className="relative h-full w-8 bg-white/20"></div>
-          </div>
-          <span className="mr-4 text-xl">
-            {loading
-              ? "Please wait..."
-              : step === 1
-              ? "Login"
-              : "Verify MFA Token"}
-          </span>
-        </button>
-      </motion.form>
+      </div>
     </div>
   );
 }
