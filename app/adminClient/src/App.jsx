@@ -2,7 +2,7 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import AdminScreen from "./screens/AdminScreen";
 import "react-toastify/dist/ReactToastify.css";
-import AdminMFAVerification from "./screens/AdminMFAVerification";
+import AdminMFAStepper from "./screens/AdminMFAStepper";
 import AdminPaymentMFA from "./screens/AdminPaymentMFA";
 import AssignTokensFlow from "./screens/AssignTokensFlow";
 import AdminPayVerification from "./screens/AdminPayVerification";
@@ -17,7 +17,7 @@ export default function App() {
     <div className="App">
       <Routes>
         <Route path="/" element={<AdminScreen />} />
-        <Route path="/payment-qrs" element={<AdminMFAVerification />} />
+        <Route path="/adminmfasetup" element={<AdminMFAStepper />} />
         <Route path="/admin-payment" element={<AdminPaymentMFA />} />
         <Route path="/assigntokenstoadmin" element={<AssignTokensFlow />} />
         <Route

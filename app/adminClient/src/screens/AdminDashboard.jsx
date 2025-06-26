@@ -5,28 +5,27 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import axiosInstance from "../utils/axiosInstance";
 import AddDoctorModal from "./AddDoctorModal";
+import config from "../utils/config";
 
 export default function AdminDashboard() {
   const [show, setShow] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showAssignTokensModal, setShowAssignTokensModal] = useState(false);
-  const [showRemoveTokensModal, setShowRemoveTokensModal] = useState(false);
   const [adminTokens, setAdminTokens] = useState(0);
   const [doctors, setDoctors] = useState(null);
-  const [tokens, setTokens] = useState(0);
-  const [doctorToDelete, setDoctorToDelete] = useState(null);
-  const [name, setName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [docEmail, setDocEmail] = useState("");
-  const [docPassword, setDocPassword] = useState("");
-  const [tier, setTier] = useState(0);
+  const [removePopupDoctorId, setRemovePopupDoctorId] = useState(null);
+  const [tokensToRemove, setTokensToRemove] = useState("");
+  const [tierPopupDoctorId, setTierPopupDoctorId] = useState(null);
+  const [selectedTier, setSelectedTier] = useState(0);  
   const [admin, setAdmin] = useState(null);
   const navigate = useNavigate();
+  const mfaEnabled = admin?.mfaEnabled === true || admin?.mfaEnabled === "true";
+
+
+
 
   const fetchDoctors = async () => {
     try {
       const res = await axiosInstance.get("/admin/doctors");
-      setDoctors(res.data.doctors); // or adjust this based on API
+      setDoctors(res.data.doctors); 
     } catch (err) {
       toast.error("Failed to fetch doctors");
     }
@@ -39,6 +38,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
+    console.log("🔑 Token from localStorage:", token);
     if (!token) {
       navigate("/admin-login");
       return;
@@ -72,25 +72,25 @@ export default function AdminDashboard() {
     }
   };
 
-  const addDoctor = async () => {
-    try {
-      const res = await axiosInstance.post("/admin/doctors/add", {
-        name,
-        email: docEmail,
-        phoneNumber,
-        password: docPassword,
-      });
-      toast.success(res.data.message || "Doctor added successfully");
-      setShow(false);
-      fetchDoctors();
-      setName("");
-      setPhoneNumber("");
-      setDocEmail("");
-      setDocPassword("");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Error adding doctor");
-    }
-  };
+  // const addDoctor = async () => {
+  //   try {
+  //     const res = await axiosInstance.post("/admin/doctors/add", {
+  //       name,
+  //       email: docEmail,
+  //       phoneNumber,
+  //       password: docPassword,
+  //     });
+  //     toast.success(res.data.message || "Doctor added successfully");
+  //     setShow(false);
+  //     fetchDoctors();
+  //     setName("");
+  //     setPhoneNumber("");
+  //     setDocEmail("");
+  //     setDocPassword("");
+  //   } catch (err) {
+  //     toast.error(err.response?.data?.message || "Error adding doctor");
+  //   }
+  // };
 
   const verifyDoctor = async (id) => {
     try {
@@ -125,13 +125,14 @@ export default function AdminDashboard() {
   const deleteDoctor = async (id) => {
     try {
       await axiosInstance.delete(`/admin/doctors/${id}`);
-      toast.success("Doctor deleted successfully");
-      fetchDoctors();
-      fetchAdminTokens();
-    } catch {
-      toast.error("Error deleting doctor");
+      toast.success("Doctor, patients, and XRAYs deleted successfully.");
+      fetchDoctors(); 
+      fetchAdminTokens(); 
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Error deleting doctor");
     }
   };
+  
 
   const assignTokens = async (id, tier) => {
     try {
@@ -157,7 +158,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="w-full px-4 md:px-8 mt-10 md:mt-16">
-      {!admin?.mfaEnabled && (
+      {/* {!(admin?.mfaEnabled === true || admin?.mfaEnabled === "true") && (
         <motion.div
           className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-2"
           initial={{ opacity: 0, y: -10 }}
@@ -173,13 +174,13 @@ export default function AdminDashboard() {
             </p>
           </div>
           <button
-            onClick={() => navigate("/admin/setupmfa")}
+            onClick={() => navigate("/adminmfasetup")}
             className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md transition"
           >
             Configure MFA
           </button>
         </motion.div>
-      )}
+      )} */}
 
       <motion.div className="text-end text-lg md:text-2xl mb-6 text-[#5c60c6]">
         Total tokens : {adminTokens}
@@ -195,7 +196,6 @@ export default function AdminDashboard() {
           Doctors List
         </h1>
         <div className="flex gap-3 flex-wrap">
-          
           <button
             className="bg-[#5c60c6] text-white px-4 py-2 rounded-md hover:bg-[#030811] transition"
             onClick={() => setShow(true)}
@@ -254,24 +254,114 @@ export default function AdminDashboard() {
                   <button
                     className="bg-[#5c60c6] text-white px-3 py-1 rounded hover:shadow-lg"
                     onClick={() => {
-                      setDoctor(doc._id);
-                      setShowAssignTokensModal(true);
+                      setTierPopupDoctorId(doc._id);
+                      setSelectedTier(0);
                     }}
                   >
                     Assign
                   </button>
+
+                  {/* Centered popup */}
+                  {tierPopupDoctorId === doc._id && (
+                    <div className="fixed inset-0 flex items-center justify-center z-50">
+                      <div className="bg-white border border-gray-300 rounded-lg shadow-xl p-10 w-96">
+                        <p className="text-3xl font-semibold mb-11 text-center">
+                          Assign Token Tier
+                        </p>
+
+                        <select
+                          className="w-full px-3 py-2 border rounded mb-7"
+                          value={selectedTier}
+                          onChange={(e) =>
+                            setSelectedTier(Number(e.target.value))
+                          }
+                        >
+                          <option value={0}>Select Tier</option>
+                          <option value={1}>Tier 1 (1000 tokens)</option>
+                          <option value={2}>Tier 2 (2000 tokens)</option>
+                          <option value={3}>Tier 3 (3000 tokens)</option>
+                        </select>
+
+                        <div className="flex justify-between items-center">
+                          <button
+                            className="bg-[#5c60c6] text-white text-lg px-5 py-1 rounded hover:bg-[#4447b3] transition"
+                            onClick={() => {
+                              if (![1, 2, 3].includes(selectedTier)) {
+                                toast.error("Please select a valid tier");
+                                return;
+                              }
+                              assignTokens(doc._id, selectedTier);
+                              setTierPopupDoctorId(null);
+                            }}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="text-lg font-semibold text-gray-900 hover:text-gray-700"
+                            onClick={() => setTierPopupDoctorId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </td>
+
                 <td className="border px-4 py-2">
                   <button
                     className="bg-[#5c60c6] text-white px-3 py-1 rounded hover:shadow-lg"
                     onClick={() => {
-                      setDoctor(doc._id);
-                      setShowRemoveTokensModal(true);
+                      setRemovePopupDoctorId(doc._id);
+                      setTokensToRemove("");
                     }}
                   >
                     Remove
                   </button>
+
+                  {/* Centered popup for removing tokens */}
+                  {removePopupDoctorId === doc._id && (
+                    <div className="fixed inset-0 flex items-center justify-center z-50">
+                      <div className="bg-white border border-gray-300 rounded-lg shadow-xl p-10 w-96">
+                        <p className="text-3xl font-semibold mb-11 text-center">
+                          Remove Tokens
+                        </p>
+
+                        <input
+                          type="number"
+                          className="w-full px-3 py-2 border rounded mb-7"
+                          placeholder="Enter number of tokens to remove"
+                          value={tokensToRemove}
+                          onChange={(e) => setTokensToRemove(e.target.value)}
+                        />
+
+                        <div className="flex justify-between items-center">
+                          <button
+                            className="bg-[#5c60c6] text-white text-lg px-5 py-1 rounded hover:bg-[#4447b3] transition"
+                            onClick={() => {
+                              const amount = Number(tokensToRemove);
+                              if (!amount || isNaN(amount) || amount <= 0) {
+                                toast.error("Enter a valid token amount");
+                                return;
+                              }
+                              removeTokens(doc._id, amount);
+                              setRemovePopupDoctorId(null);
+                            }}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="text-lg font-semibold text-gray-900 hover:text-gray-700"
+                            onClick={() => setRemovePopupDoctorId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </td>
+
                 <td className="border px-4 py-2">
                   {doc.isVerified ? (
                     <span className="bg-green-100 text-green-800 px-3 py-1 text-xs rounded-full">
@@ -312,10 +402,7 @@ export default function AdminDashboard() {
                 <td className="border px-4 py-2">
                   <button
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                    onClick={() => {
-                      setDoctorToDelete(doc._id);
-                      setShowDeleteModal(true);
-                    }}
+                    onClick={() => deleteDoctor(doc._id)}
                   >
                     Delete
                   </button>
@@ -331,81 +418,6 @@ export default function AdminDashboard() {
           onClose={() => setShow(false)}
           fetchDoctors={fetchDoctors}
         />
-      )}
-
-      {showDeleteModal && (
-        <Modal
-          title="Confirm Deletion"
-          onClose={() => setShowDeleteModal(false)}
-        >
-          <p className="mb-4">Are you sure you want to delete this doctor?</p>
-          <ModalActions
-            onCancel={() => setShowDeleteModal(false)}
-            onConfirm={async () => {
-              await deleteDoctor(doctorToDelete);
-              setShowDeleteModal(false);
-              setDoctorToDelete(null);
-            }}
-            confirmText="Delete"
-            confirmClass="bg-red-600 hover:bg-red-700"
-          />
-        </Modal>
-      )}
-
-      {showAssignTokensModal && (
-        <Modal
-          title="Assign Tokens by Tier"
-          onClose={() => setShowAssignTokensModal(false)}
-        >
-          <select
-            className="w-full px-3 py-2 border rounded mb-4"
-            value={tier}
-            onChange={(e) => setTier(e.target.value)}
-          >
-            <option value={0}>Select Tier</option>
-            <option value={1}>1000 tokens</option>
-            <option value={2}>2000 tokens</option>
-            <option value={3}>3000 tokens</option>
-          </select>
-          <ModalActions
-            onCancel={() => setShowAssignTokensModal(false)}
-            onConfirm={async () => {
-              if (!tier) return toast.error("Please select a tier");
-              await assignTokens(doctor, Number(tier));
-              setShowAssignTokensModal(false);
-              setDoctor(null);
-            }}
-            confirmText="Add"
-          />
-        </Modal>
-      )}
-
-      {showRemoveTokensModal && (
-        <Modal
-          title="Remove Tokens"
-          onClose={() => setShowRemoveTokensModal(false)}
-        >
-          <input
-            type="number"
-            className="w-full px-3 py-2 border rounded mb-4"
-            placeholder="Enter token amount"
-            value={tokens}
-            onChange={(e) => setTokens(e.target.value)}
-          />
-          <ModalActions
-            onCancel={() => setShowRemoveTokensModal(false)}
-            onConfirm={async () => {
-              if (!doctor) return toast.error("Doctor not selected");
-              if (!tokens || isNaN(tokens) || Number(tokens) <= 0) {
-                return toast.error("Enter a valid token amount");
-              }
-              await removeTokens(doctor, Number(tokens));
-              setShowRemoveTokensModal(false);
-              setDoctor(null);
-            }}
-            confirmText="Remove"
-          />
-        </Modal>
       )}
     </div>
   );

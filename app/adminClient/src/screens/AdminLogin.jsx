@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
+import axiosInstance from "../utils/axiosInstance"; 
 import config from "../utils/config";
-import axiosInstance from "../utils/axiosInstance";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
@@ -24,7 +24,9 @@ export default function AdminLogin() {
       
 
       if (res.data.mfaRequired) {
-        setTempToken(res.data.tempToken);
+        setTempToken(res.data.adminId);
+        localStorage.setItem("tempToken", res.data.adminId);
+
         setStep(2);
       } else if (res.data.token) {
         toast.success("Login successful!");
@@ -57,10 +59,15 @@ export default function AdminLogin() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     try {
-      const res = await axiosInstance.post(`/admin/verify-mfa`, {
-        token: tempToken,
-        otp: otp.join(""),
-      });
+      await axios.post(
+        `${config.API_URL}/admin/verify-mfa-setup`,
+        { otp: otp.join("") }, // ✅ only OTP in body
+        {
+          headers: {
+            Authorization: `Bearer ${tempToken}`, // ✅ token in header
+          },
+        }
+      );
       
 
       toast.success("MFA verified!");
@@ -68,11 +75,13 @@ export default function AdminLogin() {
         localStorage.setItem("adminToken", res.data.token);
       }
       navigate("/admin-dashboard");
-
     } catch (err) {
       toast.error(err.response?.data?.message || "MFA verification failed");
     }
   };
+  
+  
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">

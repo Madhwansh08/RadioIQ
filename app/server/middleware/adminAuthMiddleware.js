@@ -6,6 +6,7 @@ const adminAuthMiddleware = async (req, res, next) => {
   let token = req.header("Authorization")
     ? req.header("Authorization").replace("Bearer ", "")
     : null;
+  console.log("Token from header:", token);
 
   if (!token && req.cookies?.token) {
     token = req.cookies.token;
@@ -18,6 +19,7 @@ const adminAuthMiddleware = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const admin = await Admin.findById(decoded.id);
+    console.log("Admin found:", admin);
 
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });

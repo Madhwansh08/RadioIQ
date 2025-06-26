@@ -174,32 +174,45 @@ exports.verifyAndEnableMfa = async (req, res) => {
   try {
     const { token } = req.body;
 
-    const admin = await Admin.findOne();
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Missing or invalid auth token" });
+    }
+
+    const decoded = jwt.verify(
+      authHeader.split(" ")[1],
+      process.env.JWT_SECRET
+    );
+    const adminId = decoded.id;
+
+    const admin = await Admin.findById(adminId);
     if (!admin || !admin.mfaSecret) {
-      return res.status(400).send({ message: "MFA secret not found. Please generate QR first." });
+      return res
+        .status(400)
+        .json({ message: "MFA secret not found. Please generate QR first." });
     }
 
     const verified = speakeasy.totp.verify({
       secret: admin.mfaSecret,
       encoding: "base32",
       token,
-      window: 1,
+      window: 1, // You can try 2 to tolerate more clock drift
     });
 
     if (!verified) {
-      return res.status(401).send({ message: "Invalid MFA token" });
+      return res.status(401).json({ message: "Invalid MFA token" });
     }
 
     admin.mfaEnabled = true;
     await admin.save();
 
-    res.status(200).send({ message: "MFA setup completed" });
+    // Optional: issue new token if needed
+    res.status(200).json({ message: "MFA setup completed" });
   } catch (error) {
     console.error("Verify MFA error:", error);
-    res.status(500).send({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
-
 exports.checkAdminExists = async (req, res) => {
   try{
     const admin = await Admin.findOne({});

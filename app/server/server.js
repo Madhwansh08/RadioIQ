@@ -37,6 +37,7 @@ const reportRoutes = require("./Routes/reportRoutes");
 
 // App Initialization
 const app = express();
+
 app.set("trust proxy", 1); // Trust first proxy (Nginx)
 const PORT = process.env.PORT || 7000;
 
@@ -61,16 +62,17 @@ app.use(
 );
 
 
-
+app.use(express.json({ limit: "500mb" }));
+app.use(express.urlencoded({ extended: true, limit: "500mb" }));
 app.use(requestLogger); // Custom request logger middleware
 // app.use(cors(corsOptions));
-app.use(express.json({ limit: "500mb" }));
+
 app.use(morgan("combined", {
   stream: {
     write: (message) => logger.info(message.trim())
   }
 }));
-app.use(express.urlencoded({ extended: true, limit: "500mb" }));
+
 app.use(cookieParser());
 
 // Database Connection
@@ -86,20 +88,20 @@ connectDB()
 // SSE Connection
 const clients = {};
 
-app.options("*", (req, res) => {
-  // res.setHeader("Access-Control-Allow-Origin", allowedOrigins);
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.sendStatus(200);
-});
+// app.options("*", (req, res) => {
+//   // res.setHeader("Access-Control-Allow-Origin", allowedOrigins);
+//   const origin = req.headers.origin;
+//   if (allowedOrigins.includes(origin)) {
+//     res.setHeader("Access-Control-Allow-Origin", origin);
+//   }
+//   res.setHeader(
+//     "Access-Control-Allow-Methods",
+//     "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+//   );
+//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+//   res.setHeader("Access-Control-Allow-Credentials", "true");
+//   res.sendStatus(200);
+// });
 
 // SSE (Server-Sent Events) Route
 app.get(endPoint.eventStream, (req, res) => {

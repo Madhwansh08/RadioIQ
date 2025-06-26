@@ -4,29 +4,39 @@ import config from "./config";
 
 const axiosInstance = axios.create({
   baseURL: config.API_URL,
+  withCredentials: true,
 });
 
-// 🧠 Most Reliable: Use request interceptor
-axiosInstance.interceptors.request.use((config) => {
+// Request interceptor to attach token
+axiosInstance.interceptors.request.use((req) => {
   const token = localStorage.getItem("adminToken");
-  console.log("🔑 Using token:", token);
-
-  if (token && token !== "null" && token !== "undefined") {
-    config.headers.Authorization = `Bearer ${token}`;
-  } else {
-    delete config.headers.Authorization; // don't send null/undefined
+  if (token) {
+    req.headers.Authorization = `Bearer ${token}`;
+    console.log("✅ Authorization header set to:", req.headers.Authorization);
   }
-
-  return config;
+  return req;
 });
 
+// Response interceptor to handle token issues
 axiosInstance.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 || err.response?.status === 403) {
+    const status = err.response?.status;
+
+    if (status === 401) {
+      console.warn("⚠️ Unauthorized - clearing token");
       localStorage.removeItem("adminToken");
-      window.location.href = "/admin-login";
+
+      // Optionally redirect (if you still want this for 401)
+      // window.location.href = "/admin-login";
     }
+
+    // Do NOT clear token or redirect on 403
+    if (status === 403) {
+      console.warn("🚫 Forbidden - user lacks permission");
+      // You might choose to show a toast in your component
+    }
+
     return Promise.reject(err);
   }
 );
