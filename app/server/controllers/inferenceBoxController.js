@@ -2,6 +2,8 @@ const InferenceBox = require("../models/InferenceBox");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
 
+const tempSecrets = new Map();
+
 exports.generatePaymentMFA = async (req, res) => {
   try {
     const { name, boxNo } = req.body;
@@ -22,19 +24,13 @@ exports.generatePaymentMFA = async (req, res) => {
       });
     }
 
-    let box = await InferenceBox.findOne({ name, boxNo });
-    if (!box) {
-      box = new InferenceBox({ name, boxNo });
-    }
-
     const secret = speakeasy.generateSecret({
       name: `RadioIQ Payment MFA (${boxNo})`,
     });
 
     const qrCodeURL = await qrcode.toDataURL(secret.otpauth_url);
 
-    box.paymentMFAToken = secret.base32;
-    await box.save();
+    tempSecrets.set(boxNo, { secret: secret.base32, name });
 
     res.status(200).json({
       message: "Scan this QR to set up MFA",
@@ -46,6 +42,7 @@ exports.generatePaymentMFA = async (req, res) => {
   }
 };
 
+
 exports.verifyPaymentMFA = async (req, res) => {
   try {
     const { boxNo, token } = req.body;
@@ -54,15 +51,15 @@ exports.verifyPaymentMFA = async (req, res) => {
       return res.status(400).json({ message: "boxNo and token are required" });
     }
 
-    const box = await InferenceBox.findOne({ boxNo });
-    if (!box || !box.paymentMFAToken) {
-      return res
-        .status(404)
-        .json({ message: "InferenceBox or MFA secret not found" });
+    const tempData = tempSecrets.get(boxNo);
+    if (!tempData) {
+      return res.status(404).json({ message: "MFA secret not found. Please generate QR again." });
     }
 
+    const { secret, name } = tempData;
+
     const verified = speakeasy.totp.verify({
-      secret: box.paymentMFAToken,
+      secret,
       encoding: "base32",
       token,
       window: 1,
@@ -72,17 +69,24 @@ exports.verifyPaymentMFA = async (req, res) => {
       return res.status(401).json({ message: "Invalid or expired MFA token" });
     }
 
-    box.paymentMFAEnabled = true;
-    await box.save();
+    const newBox = new InferenceBox({
+      name,
+      boxNo,
+      paymentMFAToken: secret,
+      paymentMFAEnabled: true,
+    });
 
-    res
-      .status(200)
-      .json({ message: "Payment MFA setup successfully verified" });
+    await newBox.save();
+
+    tempSecrets.delete(boxNo);
+
+    res.status(200).json({ message: "Payment MFA setup successfully verified" });
   } catch (error) {
     console.error("Error verifying payment MFA:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 exports.checkBoxConfigured = async (req, res) => {
   try {

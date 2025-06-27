@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import axiosInstance from "../utils/axiosInstance";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import config from "../utils/config";
+import { authHeader } from "../utils/authHeader";
 
 export default function AddDoctorModal({ onClose, fetchDoctors }) {
   const [name, setName] = useState("");
@@ -14,33 +16,32 @@ export default function AddDoctorModal({ onClose, fetchDoctors }) {
 
   const addDoctor = async () => {
     try {
-      const res = await axiosInstance.post("/admin/doctors/add", {
-        name,
-        email: docEmail,
-        phoneNumber,
-        password: docPassword,
-      });
+      const res = await axios.post(
+        `${config.API_URL}/admin/doctors/add`,
+        {
+          name,
+          email: docEmail,
+          phoneNumber,
+          password: docPassword,
+        },
+        authHeader()
+      );
       toast.success(res.data.message || "Doctor added successfully");
       fetchDoctors();
       onClose();
     } catch (error) {
       const msg = error.response?.data?.message || "Error adding doctor";
-
-      if (error.response?.status === 403 && msg.toLowerCase().includes("mfa")) {
-        setMfaModal(true); // show MFA setup modal
-      } else {
+      onClose();
         toast.error(msg);
-      }
+      
     }
   };
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
           <h2 className="text-xl font-bold mb-4">Add Doctor</h2>
-          {/* Form Fields */}
-          {/* ... (name, email, phone, password) */}
           <div className="mb-4">
             <label className="block mb-1">Name</label>
             <input
@@ -95,35 +96,6 @@ export default function AddDoctorModal({ onClose, fetchDoctors }) {
           </div>
         </div>
       </div>
-
-      {/* MFA Modal */}
-      {mfaModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-sm text-center">
-            <h2 className="text-lg font-bold text-red-600 mb-4">
-              MFA Not Enabled
-            </h2>
-            <p className="mb-6">
-              You must enable Multi-Factor Authentication before performing this
-              action.
-            </p>
-            <div className="flex justify-center gap-3">
-              <button
-                className="bg-gray-300 px-4 py-2 rounded"
-                onClick={() => setMfaModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-                onClick={() => navigate("/adminmfasetup")}
-              >
-                Enable MFA
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

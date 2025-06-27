@@ -1,132 +1,213 @@
-import React, { useState } from "react";
-import axiosInstance from "../utils/axiosInstance";
+import React, { useRef, useState } from "react";
+import axios from "axios";
+import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 import config from "../utils/config";
+import { useNavigate } from "react-router-dom";
+import { authHeader } from "../utils/authHeader";
 
 export default function AssignTokensFlow() {
   const [step, setStep] = useState(1);
-  const [paymentToken, setPaymentToken] = useState("");
-  const [tierToken, setTierToken] = useState("");
   const [tier, setTier] = useState(1);
-  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
-  const goToPaymentStep = () => {
-    setStep(2);
+  const [paymentOtp, setPaymentOtp] = useState(Array(6).fill(""));
+  const [tierOtp, setTierOtp] = useState(Array(6).fill(""));
+  const paymentRefs = useRef([]);
+  const tierRefs = useRef([]);
+
+  const handleOtpChange = (otpArray, setOtp, refs) => (value, index) => {
+    if (/^\d$/.test(value) || value === "") {
+      const updated = [...otpArray];
+      updated[index] = value;
+      setOtp(updated);
+      if (value && index < 5) refs.current[index + 1]?.focus();
+    }
   };
+
+  const handleOtpKeyDown = (otpArray, refs) => (e, index) => {
+    if (e.key === "Backspace" && otpArray[index] === "" && index > 0) {
+      refs.current[index - 1]?.focus();
+    }
+  };
+
+  const goToPaymentStep = () => setStep(2);
 
   const verifyPayment = async () => {
     try {
-      await axiosInstance.post(`${config.API_URL}/admin/verify-payment-token`, {
-        paymentToken,
-      });
-      setStep(3);
-      setMessage(
-        "✅ Payment OTP verified. Now enter Tier OTP to assign tokens."
+      await axios.post(
+        `${config.API_URL}/admin/verify-payment-token`,
+        { paymentToken: paymentOtp.join("") },
+        authHeader()
       );
+      setStep(3);
+      toast.success("✅ Payment OTP verified.");
     } catch (err) {
-      setMessage(
-        err.response?.data?.message || "❌ Error verifying payment OTP."
+      toast.error(
+        err.response?.data?.message || "Error verifying payment OTP."
       );
     }
   };
 
   const assignTokens = async () => {
     try {
-      const res = await axiosInstance.post(
+      const res = await axios.post(
         `${config.API_URL}/admin/assign-tokens-after-mfa`,
-        { tier, tierToken }
+        { tier, tierToken: tierOtp.join("") },
+        authHeader()
       );
-      setMessage(`✅ ${res.data.message} (New total: ${res.data.newTotal})`);
+      toast.success(`${res.data.message} (New total: ${res.data.newTotal})`);
+      navigate("/admin-dashboard");
     } catch (err) {
-      setMessage(err.response?.data?.message || "❌ Error assigning tokens.");
+      toast.error(err.response?.data?.message || "Error assigning tokens.");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-      <div className="w-5/6 p-96 h-5/6 bg-white rounded-2xl shadow-xl space-y-6">
-        <h2 className="text-5xl font-bold text-center text-gray-800">
-           Admin Token Assignment
+    <div className="flex flex-col items-center justify-center min-h-screen w-full bg-[#fdfdfd] px-4">
+      <motion.div
+        className="text-center text-5xl md:text-6xl font-bold text-[#5c60c6] mb-10"
+      >
+        Welcome to <span className="text-[#030811]">RadioIQ</span>
+      </motion.div>
+      <motion.div
+        className="bg-white p-10 rounded-3xl shadow-lg w-full max-w-xl"
+      >
+        <h2 className="text-center text-3xl font-semibold text-[#030811] mb-6">
+          {step==2 && "Enter the Payment OTP"}
+          {step==3 && "Select the Tier & enter the tier OTP"}
         </h2>
 
         {step === 1 && (
-          <div className="space-y-6 text-center">
-            <p className="text-xl text-orange-400">
-              <strong>Important:</strong> Please{" "}
-              <span className="font-semibold">call the IT team</span> before
-              continuing.
-            </p>
-            <button
-              onClick={goToPaymentStep}
-              className="w-2/6 py-3 px-6 text-lg rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
-            >
-              I'm in the call with them, proceed
-            </button>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-lg text-center space-y-6">
+              <h3 className="text-3xl font-bold text-gray-800">
+                ⚠️ Important
+              </h3>
+              <p className="text-2xl text-red-500">
+                Please <span className="font-semibold">call the IT team</span>{" "}
+                before continuing.
+              </p>
+             <div className="flex gap-2">
+             <button
+                onClick={goToPaymentStep}
+                className="w-full group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md bg-[#5c60c6] px-6 font-medium text-white transition hover:shadow-[0_4px_15px_#5c60c6]"
+              >
+                <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-[1.5s] group-hover:[transform:skew(-12deg)_translateX(100%)]">
+                  <div className="relative h-full w-8 bg-white/20"></div>
+                </div>
+                <span className="mr-4 text-xl">Proceed</span>
+              </button>
+              <button
+                onClick={() => navigate(-1)}
+                className="w-full group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md bg-red-500 px-6 font-medium text-white transition hover:shadow-[0_4px_15px_#ff0000]"
+              >
+                <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-[1.5s] group-hover:[transform:skew(-12deg)_translateX(100%)]">
+                  <div className="relative h-full w-8 bg-white/20"></div>
+                </div>
+                <span className="mr-4 text-xl">Go Back</span>
+              </button>
+             </div>
+            </div>
           </div>
         )}
 
         {step === 2 && (
-          <div className="space-y-5">
-            <label className="block text-lg font-medium text-gray-700">
-              Enter Payment OTP (from IT):
-            </label>
-            <input
-              type="text"
-              value={paymentToken}
-              onChange={(e) => setPaymentToken(e.target.value)}
-              className="w-full px-4 py-3 text-lg border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter 6-digit OTP"
-            />
+          <div className="space-y-4">
+            <div className="flex justify-center gap-2">
+              {paymentOtp.map((digit, index) => (
+                <input
+                  key={index}
+                  type="text"
+                  maxLength={1}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={digit}
+                  onChange={(e) =>
+                    handleOtpChange(
+                      paymentOtp,
+                      setPaymentOtp,
+                      paymentRefs
+                    )(e.target.value, index)
+                  }
+                  onKeyDown={(e) =>
+                    handleOtpKeyDown(paymentOtp, paymentRefs)(e, index)
+                  }
+                  ref={(el) => (paymentRefs.current[index] = el)}
+                  className="w-12 h-12 text-center text-xl border border-gray-300 rounded-md bg-gray-50 text-gray-900 focus:ring-2 focus:ring-[#5c60c6]"
+                />
+              ))}
+            </div>
             <button
               onClick={verifyPayment}
-              className="w-full py-3 px-6 text-lg rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
+              className="w-full group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md bg-[#5c60c6] px-6 font-medium text-white transition hover:shadow-[0_4px_15px_#5c60c6]"
             >
-              Verify Payment OTP
+              <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-[1.5s] group-hover:[transform:skew(-12deg)_translateX(100%)]">
+                <div className="relative h-full w-8 bg-white/20"></div>
+              </div>
+              <span className="mr-4 text-xl">Verify Payment OTP</span>
             </button>
           </div>
         )}
 
         {step === 3 && (
-          <div className="space-y-5">
+          <div className="space-y-6">
             <label className="block text-lg font-medium text-gray-700">
               Select Token Tier:
             </label>
             <select
               value={tier}
               onChange={(e) => setTier(Number(e.target.value))}
-              className="w-full px-4 py-3 text-lg border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-md bg-gray-50 text-gray-900 focus:ring-2 focus:ring-[#5c60c6] mb-4"
             >
-              <option value={1}>Tier 1 - 5K</option>
-              <option value={2}>Tier 2 - 10K</option>
-              <option value={3}>Tier 3 - 25K</option>
-              <option value={4}>Tier 4 - 50K</option>
-              <option value={5}>Tier 5 - 100K</option>
+              <option value={1}>5,000</option>
+              <option value={2}>10,000</option>
+              <option value={3}>20,000</option>
+              <option value={4}>50,000</option>
+              <option value={5}>1,00,000</option>
             </select>
 
             <label className="block text-lg font-medium text-gray-700">
-              Enter Tier OTP (from IT):
+              Tier OTP:
             </label>
-            <input
-              type="text"
-              value={tierToken}
-              onChange={(e) => setTierToken(e.target.value)}
-              className="w-full px-4 py-3 text-lg border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Enter 6-digit OTP"
-            />
+            <div className="flex justify-center gap-2">
+              {tierOtp.map((digit, index) => (
+                <input
+                  key={index}
+                  type="text"
+                  maxLength={1}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={digit}
+                  onChange={(e) =>
+                    handleOtpChange(
+                      tierOtp,
+                      setTierOtp,
+                      tierRefs
+                    )(e.target.value, index)
+                  }
+                  onKeyDown={(e) =>
+                    handleOtpKeyDown(tierOtp, tierRefs)(e, index)
+                  }
+                  ref={(el) => (tierRefs.current[index] = el)}
+                  className="w-12 h-12 text-center text-xl border border-gray-300 rounded-md bg-gray-50 text-gray-900 focus:ring-2 focus:ring-[#5c60c6]"
+                />
+              ))}
+            </div>
             <button
               onClick={assignTokens}
-              className="w-full py-3 px-6 text-lg rounded-xl bg-green-600 text-white hover:bg-green-700 transition"
+              className="w-full group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md bg-[#5c60c6] px-6 font-medium text-white transition hover:shadow-[0_4px_15px_#5c60c6]"
             >
-              Verify Tier OTP & Assign Tokens
+              <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-[1.5s] group-hover:[transform:skew(-12deg)_translateX(100%)]">
+                <div className="relative h-full w-8 bg-white/20"></div>
+              </div>
+              <span className="mr-4 text-xl">
+                Verify Tier OTP
+              </span>
             </button>
           </div>
         )}
-
-        {message && (
-          <div className="mt-4 text-center text-md text-gray-800 bg-gray-100 p-4 rounded-lg border">
-            {message}
-          </div>
-        )}
-      </div>
+      </motion.div>
     </div>
   );
 }

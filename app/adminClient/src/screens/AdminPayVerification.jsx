@@ -1,38 +1,30 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
 import config from "../utils/config";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-export default function AdminPayVerification() {
+export default function AdminPayVerification({onBoxConfigure}) {
   const [step, setStep] = useState(1);
   const [qrCodeURL, setQrCodeURL] = useState("");
   const [mfaToken, setMfaToken] = useState(Array(6).fill(""));
+  const [name, setName] = useState("");
+  const [boxNumber, setBoxNumber] = useState("");
   const inputRefs = useRef([]);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-
-  const [boxInfo, setBoxInfo] = useState({
-    name: "",
-    boxNo: "",
-  });
-
-  useEffect(() => {
-    const storedName = sessionStorage.getItem("boxUserName") || "";
-    const storedBoxNo = sessionStorage.getItem("boxNumber") || "";
-    setBoxInfo({ name: storedName, boxNo: storedBoxNo });
-  }, []);
 
   const handleBoxConfigure = async (e) => {
     e.preventDefault();
     try {
       const res = await axios.post(
         `${config.API_URL}/inference/configure-inference-box`,
-        boxInfo
+        { name, boxNo: boxNumber }
       );
       setQrCodeURL(res.data.qrCodeURL);
       setStep(2);
+      toast.success("QR code generated. Scan it with your authenticator app.");
     } catch (err) {
       setMessage(err.response?.data?.message || "Failed to generate MFA QR");
     }
@@ -41,15 +33,16 @@ export default function AdminPayVerification() {
   const handleMfaVerification = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        `${config.API_URL}/inference/verify-inference-box-mfa`,
-        {
-          boxNo: boxInfo.boxNo,
-          token: mfaToken.join(""),
-        }
-      );
+      await axios.post(`${config.API_URL}/inference/verify-inference-box-mfa`, {
+        boxNo: boxNumber,
+        token: mfaToken.join(""),
+      });
+
       toast.success("Box MFA verified!");
-      navigate("/admin-register");
+
+      if (onBoxConfigure) onBoxConfigure();
+
+      navigate("/");
     } catch (err) {
       setMessage(err.response?.data?.message || "MFA verification failed");
     }
@@ -60,13 +53,13 @@ export default function AdminPayVerification() {
       const updatedOtp = [...mfaToken];
       updatedOtp[index] = value;
       setMfaToken(updatedOtp);
-      if (value && index < 5) inputRefs.current[index + 1].focus();
+      if (value && index < 5) inputRefs.current[index + 1]?.focus();
     }
   };
 
   const handleOtpKeyDown = (e, index) => {
     if (e.key === "Backspace" && mfaToken[index] === "" && index > 0) {
-      inputRefs.current[index - 1].focus();
+      inputRefs.current[index - 1]?.focus();
     }
   };
 
@@ -97,14 +90,24 @@ export default function AdminPayVerification() {
 
         {step === 1 && (
           <form onSubmit={handleBoxConfigure} className="space-y-5">
-            <div className="text-gray-700">
-              <p>
-                <strong>Box Name:</strong> {boxInfo.name}
-              </p>
-              <p>
-                <strong>Box Number:</strong> {boxInfo.boxNo}
-              </p>
-            </div>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 border rounded-md bg-gray-50 text-gray-900 mb-4"
+              placeholder="Enter box name"
+              required
+            />
+
+            <input
+              type="text"
+              value={boxNumber}
+              onChange={(e) => setBoxNumber(e.target.value)}
+              className="w-full px-4 py-3 border rounded-md bg-gray-50 text-gray-900"
+              placeholder="Enter box number"
+              required
+            />
+
             <button
               type="submit"
               className="w-full group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md bg-[#5c60c6] px-6 font-medium text-white transition hover:shadow-[0_4px_15px_#5c60c6]"

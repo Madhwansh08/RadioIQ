@@ -4,7 +4,7 @@ import config from "../utils/config";
 import { useNavigate } from "react-router-dom";
 
 const AdminMFAStepper = () => {
-  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -16,11 +16,6 @@ const AdminMFAStepper = () => {
         const res = await axios.post(
           `${config.API_URL}/admin/setup-mfa`,
           {},
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-            },
-          }
         );
         setQrCodeUrl(res.data.qrCodeURL);
       } catch (err) {
@@ -42,16 +37,11 @@ const AdminMFAStepper = () => {
       const res = await axios.post(
         `${config.API_URL}/admin/verify-mfa-setup`,
         { token },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-          },
-        }
       );
 
       if (res.data.message.includes("completed")) {
         setSuccess(true);
-        setTimeout(() => navigate("/admin-dashboard"), 2000);
+        navigate("/admin-dashboard");
       } else {
         setError("Invalid OTP. Try again.");
       }
@@ -63,16 +53,6 @@ const AdminMFAStepper = () => {
     }
   };
 
-  if (success) {
-    return (
-      <div className="max-w-md mx-auto mt-20 text-center">
-        <h2 className="text-3xl font-bold text-green-600 mb-4">
-          ✅ MFA Setup Complete!
-        </h2>
-        <p>Redirecting to Admin Dashboard...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg text-center">
@@ -88,8 +68,7 @@ const AdminMFAStepper = () => {
             className="mx-auto w-64 h-64 mb-4"
           />
           <p className="text-sm text-gray-600 mb-4">
-            Scan this QR code with your authenticator app (Google Authenticator,
-            Authy, etc.)
+            Scan this QR code with your authenticator app
           </p>
         </>
       ) : (

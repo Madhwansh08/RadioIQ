@@ -1,14 +1,13 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
-import axiosInstance from "../utils/axiosInstance"; 
 import config from "../utils/config";
+import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminLogin() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [tempToken, setTempToken] = useState(null);
   const [otp, setOtp] = useState(Array(6).fill(""));
   const inputRefs = useRef([]);
   const navigate = useNavigate();
@@ -19,19 +18,14 @@ export default function AdminLogin() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      console.log("✅Submitting form data:", formData);
+
       const res = await axios.post(`${config.API_URL}/admin/login`, formData);
-      
-
       if (res.data.mfaRequired) {
-        setTempToken(res.data.adminId);
-        localStorage.setItem("tempToken", res.data.adminId);
-
         setStep(2);
       } else if (res.data.token) {
         toast.success("Login successful!");
         if (res.data.token) {
-          localStorage.setItem("adminToken", res.data.token);
+          sessionStorage.setItem("adminToken", res.data.token);
         }
         navigate("/admin-dashboard");
       }
@@ -59,20 +53,13 @@ export default function AdminLogin() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
-        `${config.API_URL}/admin/verify-mfa-setup`,
-        { otp: otp.join("") }, // ✅ only OTP in body
-        {
-          headers: {
-            Authorization: `Bearer ${tempToken}`, // ✅ token in header
-          },
-        }
-      );
-      
-
+      const res = await axios.post(`${config.API_URL}/admin/verify-mfa`, {
+        token: otp.join("")
+      });
       toast.success("MFA verified!");
+      console.log(res.data);
       if (res.data.token) {
-        localStorage.setItem("adminToken", res.data.token);
+        sessionStorage.setItem("adminToken", res.data.token);
       }
       navigate("/admin-dashboard");
     } catch (err) {
@@ -84,14 +71,28 @@ export default function AdminLogin() {
   
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+    <div className="flex flex-col items-center justify-center min-h-screen w-full bg-[#fdfdfd] px-4">
+      <motion.div
+        className="text-center text-5xl md:text-6xl font-bold text-[#5c60c6] mb-10"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        Welcome to <span className="text-[#030811]">RadioIQ Admin Panel</span>
+      </motion.div>
+
+      <motion.div
+        className="bg-white p-10 rounded-3xl shadow-lg w-full max-w-xl"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h2 className="text-center text-3xl font-semibold text-[#030811] mb-6">
           Admin Login
         </h2>
 
         {step === 1 && (
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <input
               type="email"
               name="email"
@@ -99,7 +100,7 @@ export default function AdminLogin() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border rounded-md"
+              className="w-full px-4 py-3 border rounded-md bg-gray-50 text-gray-900"
             />
             <input
               type="password"
@@ -108,14 +109,17 @@ export default function AdminLogin() {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border rounded-md"
+              className="w-full px-4 py-3 border rounded-md bg-gray-50 text-gray-900"
             />
             <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
-            >
-              Login
-            </button>
+            type="submit"
+            className="w-full group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md bg-[#5c60c6] px-6 font-medium text-white transition hover:shadow-[0_4px_15px_#5c60c6]"
+          >
+            <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-[1.5s] group-hover:[transform:skew(-12deg)_translateX(100%)]">
+              <div className="relative h-full w-8 bg-white/20"></div>
+            </div>
+            <span className="mr-4 text-xl">Login</span>
+          </button>
           </form>
         )}
 
@@ -134,19 +138,22 @@ export default function AdminLogin() {
                   onChange={(e) => handleOtpChange(e.target.value, index)}
                   onKeyDown={(e) => handleOtpKeyDown(e, index)}
                   ref={(el) => (inputRefs.current[index] = el)}
-                  className="w-12 h-12 text-center border rounded-md text-xl"
+                   className="w-12 h-12 text-center text-xl border border-gray-300 rounded-md bg-gray-50 text-gray-900 focus:ring-2 focus:ring-[#5c60c6]"
                 />
               ))}
             </div>
             <button
-              type="submit"
-              className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition"
-            >
-              Verify OTP
-            </button>
+                type="submit"
+                className="w-full group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md bg-[#5c60c6] px-6 font-medium text-white transition hover:shadow-[0_4px_15px_#5c60c6]"
+              >
+                <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-[1.5s] group-hover:[transform:skew(-12deg)_translateX(100%)]">
+                  <div className="relative h-full w-8 bg-white/20"></div>
+                </div>
+                <span className="mr-4 text-xl">Verify OTP</span>
+              </button>
           </form>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

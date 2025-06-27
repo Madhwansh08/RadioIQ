@@ -52,6 +52,8 @@ router.delete(
 
 router.get("/adminExists", AdminController.checkAdminExists);
 
+router.get("/mfa-enabled", AdminController.checkMFAEnabled);
+
 router.post(
   "/assignTokens/:doctorId",
   adminAuthMiddleware,
@@ -68,8 +70,6 @@ router.post(
 
 router.get(
   "/adminTokens",
-  adminAuthMiddleware,
-  isAdmin,
   AdminController.getAdminTokens
 );
 

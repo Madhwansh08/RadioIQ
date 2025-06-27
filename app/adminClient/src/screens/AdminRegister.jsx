@@ -21,9 +21,10 @@ const AdminRegister = ({ onRegisterSuccess }) => {
     e.preventDefault();
     try {
       await axios.post(`${config.API_URL}/admin/register`, formData);
+      sessionStorage.setItem("adminExists", "true");
       toast.success("Admin registered successfully!");
       if (onRegisterSuccess) onRegisterSuccess();
-      navigate("/admin-login"); // Update if your login path differs
+      navigate("/admin-login");
     } catch (err) {
       setMessage(err.response?.data?.message || "Registration failed");
     }
