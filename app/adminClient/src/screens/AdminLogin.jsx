@@ -57,7 +57,6 @@ export default function AdminLogin() {
         token: otp.join("")
       });
       toast.success("MFA verified!");
-      console.log(res.data);
       if (res.data.token) {
         sessionStorage.setItem("adminToken", res.data.token);
       }

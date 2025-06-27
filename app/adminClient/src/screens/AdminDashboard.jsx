@@ -132,7 +132,6 @@ export default function AdminDashboard() {
   
 
   const assignTokens = async (id, tier) => {
-    console.log("Assigning tokens:", id, tier);
     try {
       await axios.post(
         `${config.API_URL}/admin/assignTokens/${id}`,
@@ -149,7 +148,6 @@ export default function AdminDashboard() {
   };
 
   const removeTokens = async (id, tokens) => {
-    console.log("Removing tokens:", id, tokens);
     try {
       await axios.post(
         `${config.API_URL}/admin/removeTokens/${id}`,

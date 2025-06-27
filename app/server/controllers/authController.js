@@ -45,7 +45,6 @@ exports.registerDoctor = async (req, res) => {
       subscriptionEndDate = null,
       patients = [],
     } = req.body;
-    console.log("Registering doctor with data:", req.body);
  
     if (!name || !email || !phoneNumber || !password) {
       return res

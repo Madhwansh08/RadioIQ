@@ -122,8 +122,6 @@ exports.verifyMfa = async (req, res) => {
     const { token } = req.body;
 
     const admin = await Admin.findOne();
-    console.log("Admin found:", admin);
-    console.log("Admin ", admin.mfaEnabled);
     if (!admin || !admin.mfaEnabled) {
       return res.status(403).send({ message: "MFA not configured" });
     }
@@ -173,7 +171,6 @@ exports.setupAdminMfa = async (req, res) => {
       admin.mfaSecret = mfaSecret;
       await admin.save();
     }
-    console.log("MFA Secret:", mfaSecret);
     const otpauth_url = speakeasy.otpauthURL({
       secret: mfaSecret,
       label: `RadioIQ (${admin.email})`,
@@ -199,14 +196,10 @@ exports.verifyAndEnableMfa = async (req, res) => {
       });
     }
 
-    // 🐞 Add logs for debugging
-    console.log("🔐 Submitted OTP:", token);
-    console.log("📦 Expected secret:", admin.mfaSecret);
     const generatedTOTP = speakeasy.totp({
       secret: admin.mfaSecret,
       encoding: "base32",
     });
-    console.log("⏱️ TOTP generated at server:", generatedTOTP);
 
     const verified = speakeasy.totp.verify({
       secret: admin.mfaSecret,
@@ -443,7 +436,6 @@ exports.assignTokensToDoctor = async (req, res) => {
     const doctorId = req.params.doctorId;
     const { tier } = req.body;
 
-    console.log("Assigning tokens to doctor:", doctorId, tier);
     if (!doctorId || !tier) {
       return res
         .status(400)
@@ -469,12 +461,10 @@ exports.assignTokensToDoctor = async (req, res) => {
     if (!doctor) {
       return res.status(404).send({ message: "Doctor not found" });
     }
-    console.log("Doctor found:", doctor);
     const admin = await Admin.findOne();
     if (!admin) {
       return res.status(500).send({ message: "Admin not found" });
     }
-    console.log("Admin found:", admin);
     if (admin.tokens < tokensToBeAssigned) {
       return res
         .status(400)
@@ -589,9 +579,6 @@ exports.verifySingleAdminTokenMFA = async (req, res) => {
       token,
       window: 2, // ±60s
     });
-
-    console.log("Token:", token);
-    console.log("Delta result:", delta);
 
     if (!delta) {
       return res
