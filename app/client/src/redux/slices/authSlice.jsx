@@ -16,6 +16,7 @@ const cleanUserData = (user) => {
     isVerified,
     role,
     accountStatus,
+    tokens,
     subscriptionStartDate,
     subscriptionEndDate,
     profilePicture,
@@ -34,6 +35,7 @@ const cleanUserData = (user) => {
     isVerified,
     role,
     accountStatus,
+    tokens,
     subscriptionStartDate,
     subscriptionEndDate,
     profilePicture,
@@ -114,6 +116,26 @@ export const loginUser = createAsyncThunk(
     }
   }
 );
+
+export const fetchOwnDoctorTokens = createAsyncThunk(
+  "auth/fetchOwnDoctorTokens",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${config.API_URL}/api/auth/tokens`, 
+        { withCredentials: true }
+      );
+      return response.data.tokens;
+    } catch (error) {
+      console.error("Error fetching doctor tokens:", error);
+      return rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
+
  
 // Async thunk for user logout
 export const logoutUser = createAsyncThunk(
@@ -229,6 +251,23 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     });
+    // fetch Tokens
+    builder.addCase(fetchOwnDoctorTokens.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(fetchOwnDoctorTokens.fulfilled, (state, action) => {
+      state.loading = false;
+      if (state.user) {
+        state.user.tokens = action.payload;
+      }
+      saveAuthToLocalStorage(state);
+    });
+    builder.addCase(fetchOwnDoctorTokens.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    });
+    
     // Logout
     builder.addCase(logoutUser.pending, (state) => {
       state.loading = true;

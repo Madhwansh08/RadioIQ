@@ -54,12 +54,14 @@ router.post(endPoint.register, AuthController.registerDoctor);
 *     responses:
 *       200:
 *         description: Doctor logged in successfully
-*       400:
+*       400: 
 *         description: Bad request
 */
 router.post(endPoint.login, AuthController.loginDoctor);
  
 router.post("/loginById/:doctorId", AuthController.loginDoctorByID);
+
+router.get("/tokens", authMiddleware, AuthController.getDoctorTokens);
  
 router.get("/getAllDoctorsPublic", AuthController.getAllDoctorsPublic);
  
@@ -216,6 +218,8 @@ router.post(
   authMiddleware,
   AuthController.requestVerificationOTP
 );
+
+
  
 router.post(
   endPoint.verifyVerificationOTP,

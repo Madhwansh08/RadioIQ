@@ -43,6 +43,8 @@ const Header = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  
  
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -241,6 +243,8 @@ const Header = () => {
                  <span className="dark:text-[#fdfdfd] text-[#030811]">Dashboard</span>
                 </AnimatedTab>
               )}
+              {auth?.user && (<span className="dark:text-[#fdfdfd] text-[#030811]">🪙 {auth.user.tokens}</span>)}
+
               {auth?.user ? (
                 <AvatarDropdown />
               ) : (

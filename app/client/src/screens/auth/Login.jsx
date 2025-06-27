@@ -50,51 +50,34 @@ const Login = () => {
  
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
+    const email = selectedDoctor?.email?.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(selectedDoctor?.email)) {
+  
+    if (!email || !emailRegex.test(email)) {
       toast.error("Invalid email format");
       return;
     }
-    if (!password) {
+  
+    if (!password?.trim()) {
       toast.error("Password cannot be empty");
       return;
     }
-    const resultAction = await dispatch(
-      loginUser({ email: selectedDoctor.email, password })
-    );
- 
+  
+    const resultAction = await dispatch(loginUser({ email, password }));
+  
     if (loginUser.fulfilled.match(resultAction)) {
       toast.success("Login successful");
-      // Rehydrate user data
-      dispatch(fetchUserProfile());
+  
+      // Rehydrate user data & tokens
+      await dispatch(fetchUserProfile());
+      await dispatch(fetchOwnDoctorTokens());
+  
       navigate("/");
     } else {
       toast.error(resultAction.payload || "Login failed");
     }
   };
- 
-  // const handleLogin = async (doctorId) => {
-  //   if (!doctorId) {
-  //     toast.error("Invalid doctor ID provided.");
-  //     return;
-  //   }
- 
-  //   try {
-  //     const result = await dispatch(loginByDoctorId(doctorId));
- 
-  //     if (loginByDoctorId.fulfilled.match(result)) {
-  //       toast.success("Login successful");
-  //       navigate("/");
-  //     } else {
-  //       const errorMsg = result.payload || "Login failed. Please try again.";
-  //       console.error("LoginByDoctorId rejected:", errorMsg);
-  //       toast.error(errorMsg);
-  //     }
-  //   } catch (err) {
-  //     console.error("Unexpected login error:", err);
-  //     toast.error("An unexpected error occurred during login.");
-  //   }
-  // };
  
   return (
     <div className="min-h-screen flex flex-col">
@@ -109,23 +92,6 @@ const Login = () => {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-6xl">
             {doctors.map((doctor) => (
-              // <div
-              //   key={doctor._id}
-              //   onClick={() => handleLogin(doctor._id)}
-              //   className="bg-white cursor-pointer p-4 rounded-lg flex items-center space-x-4 shadow hover:shadow-lg transition hover:shadow-[#5c60c6]"
-              // >
-              //   <img
-              //     src={user}
-              //     alt="Doctor Profile"
-              //     className="w-16 h-16 rounded-full object-cover"
-              //   />
-              //   <div>
-              //     <h4 className="text-lg font-semibold text-gray-900">
-              //       {doctor.name}
-              //     </h4>
-              //     <p className="text-sm text-gray-600">{doctor.email}</p>
-              //   </div>
-              // </div>
               <div
                 key={doctor._id}
                 onClick={() => handleLoginClick(doctor)}

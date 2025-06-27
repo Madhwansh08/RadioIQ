@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const XrayController = require("../controllers/XrayController");
 const {authMiddleware} = require("../middleware/authMiddleware");
+const checkTokens = require("../middleware/tokenMiddleware");
 const endPoint = require("../endPoints.js");
 
 const router = express.Router();
@@ -164,6 +165,7 @@ router.post(
   endPoint.uploadMultipleDicomXray,
   upload.array("files"),
   authMiddleware,
+  checkTokens,
   XrayController.uploadMultipleDicomXray
 );
 
